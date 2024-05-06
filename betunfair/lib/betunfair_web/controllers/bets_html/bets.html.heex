@@ -1,0 +1,44 @@
+<section class="w-full min-h-screen bg-black flex flex-col animate-fadeIn">
+    <section class="px-4 sm:px-6 lg:px-8 bg-gray-900 text-white py-4 sticky top-0">
+        <div class="flex justify-between items-center">
+            <h2 class="text-lg font-bold">Bets:</h2>
+        </div>
+    </section>
+    <div class="flex flex-1 overflow-auto">
+        <section class="w-full p-4">
+            <div class="flex flex-col items-center">
+                <div class="bg-gray-800 rounded-lg p-4 w-full overflow-auto">
+                    <ul>
+                        <!-- Ejemplo de elementos, repite este bloque para cada apuesta con botones específicos para cada tipo -->
+                        <li class="mb-4 bg-gray-900 p-4 rounded-lg shadow-lg text-white">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <span class="mr-2">Bet 1 - RealMadrid/Atletic - LaLiga</span>
+                                    <span class="mr-2">Amount: 200</span>
+                                    <span class="mr-2">Odd: 3.5</span>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <a href="/lay-bets" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition ease-in-out duration-300 transform hover:-translate-y-1">Lay</a>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="mb-4 bg-gray-900 p-4 rounded-lg shadow-lg text-white">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <span class="mr-2">Bet 2 - RealMadrid/Atletic - LaLiga</span>
+                                    <span class="mr-2">Amount: 200</span>
+                                    <span class="mr-2">Odd: 3.5</span>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <a href="/back-bets" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition ease-in-out duration-300 transform hover:-translate-y-1">Back</a>
+                                </div>
+                            </div>
+                        </li>
+                        <!-- Más apuestas se añadirían aquí -->
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </div>
+</section>
+
