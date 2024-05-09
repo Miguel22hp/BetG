@@ -3,7 +3,6 @@ defmodule Betunfair.Repo.Migrations.CreateMarkets do
 
   def change do
     create table(:markets) do
-      add :id_markets, :integer
       add :name, :string
       add :description, :string
       add :status, :string
@@ -11,6 +10,5 @@ defmodule Betunfair.Repo.Migrations.CreateMarkets do
       timestamps(type: :utc_datetime)
     end
 
-    create unique_index(:markets, [:id_markets])
   end
 end

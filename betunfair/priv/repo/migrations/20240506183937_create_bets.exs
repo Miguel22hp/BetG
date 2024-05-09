@@ -3,7 +3,6 @@ defmodule Betunfair.Repo.Migrations.CreateBets do
 
   def change do
     create table(:bets) do
-      add :id_bets, :integer
       add :odds, :integer
       add :type, :string
       add :original_stake, :integer
@@ -14,7 +13,6 @@ defmodule Betunfair.Repo.Migrations.CreateBets do
       timestamps(type: :utc_datetime)
     end
 
-    create unique_index(:bets, [:id_bets])
     create index(:bets, [:user_id])
     create index(:bets, [:market_id])
   end
