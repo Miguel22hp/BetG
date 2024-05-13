@@ -3,7 +3,7 @@ defmodule Betunfair.Matched do
   import Ecto.Changeset
 
   schema "matched" do
-    field :id_matched, :integer
+
     field :id_bet_backed, :id
     field :id_bet_layed, :id
 
@@ -13,8 +13,7 @@ defmodule Betunfair.Matched do
   @doc false
   def changeset(matched, attrs) do
     matched
-    |> cast(attrs, [:id_matched])
-    |> validate_required([:id_matched])
-    |> unique_constraint(:id_matched)
+    |> cast(attrs, [])
+    |> validate_required([])
   end
 end
