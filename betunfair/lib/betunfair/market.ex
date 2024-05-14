@@ -57,7 +57,7 @@ defmodule Betunfair.Market do
         _market ->
           # Ya existe un mercado con el mismo nombre, maneja este caso según tus necesidades
           # Por ejemplo, podrías devolver un error o lanzar una excepción
-          {:error, "Ya existe un mercado con el mismo nombre"}
+          {:reply, {:error, "Ya existe un mercado con el mismo nombre"}, state}
       end
     end
 
@@ -70,8 +70,12 @@ defmodule Betunfair.Market do
       case insert_market(name, description) do
         {:ok, market} ->
           child_name = :"market_supervisor#{market.id}" #nombre del hijo
-          Supervisor.start_child(:market_supervisor, {Betunfair.Market.SupervisorOperationsMarket, {:args, child_name, market.id}})
-          {:ok, market.id}
+          case Supervisor.start_child(:market_supervisor, {Betunfair.Market.SupervisorOperationsMarket, {:args, child_name, market.id}}) do
+            {:ok, pid} ->
+              {:ok, market.id}
+            {:error, reason} ->
+              {:error, reason}
+          end
         {:error, reason} ->
           {:error, reason}
       end
@@ -121,7 +125,12 @@ defmodule Betunfair.Market do
       Llama al servidor para que cree un mercado
     """
     def market_create(name, description) do
-      GenServer.call(:gestor_market, {:market_create, name, description})
+      case GenServer.call(:gestor_market, {:market_create, name, description}) do
+        {:ok, market_id} ->
+          {:ok, market_id}
+        {:error, reason} ->
+          {:error, reason}
+      end
     end
 
     @doc """
@@ -151,7 +160,7 @@ defmodule Betunfair.Market do
       # consturir el nombre del hijo, que será market_id
       children_name = :"market_#{id}"
       children = [
-        {Betunfair.Market.OperationsMarket, [{:args, children_name}]}
+        {Betunfair.Market.OperationsMarket, {:args, children_name, id}}
       ]
       Supervisor.init(children, strategy: :one_for_one)
     end
@@ -160,12 +169,12 @@ defmodule Betunfair.Market do
   defmodule OperationsMarket do
     use GenServer
 
-    def start_link({:args, children_name}) do
-      GenServer.start_link(__MODULE__, [], name: children_name)
+    def start_link({:args, children_name, id}) do
+      GenServer.start_link(__MODULE__, {:args, children_name, id}, name: children_name)
     end
 
-    def init(args) do
-      {:ok, args}
+    def init({:args, children_name, id}) do
+      {:ok, id}
     end
 
 
