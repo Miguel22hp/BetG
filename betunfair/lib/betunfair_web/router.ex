@@ -19,7 +19,7 @@ defmodule BetunfairWeb.Router do
 
     get "/", PageController, :home
     get "/bets", BetsController, :bets
-    get "/profile", ProfileController, :profile
+    get "/users/:id/profile", ProfileController, :profile
   end
 
   # Other scopes may use custom stacks.

@@ -1,48 +1,51 @@
 <section class="w-full min-h-screen bg-black flex flex-col animate-fadeIn">
-    <section class="px-4 sm:px-6 lg:px-8 bg-gray-900 text-white py-4 sticky top-0">
+    <header class="px-4 sm:px-6 lg:px-8 bg-gray-900 text-white py-4 sticky top-0">
         <div class="flex justify-between items-center">
-            <h2 class="text-lg font-bold">Profile:</h2>
+            <h1 class="text-xl font-bold">Profile Page</h1>
         </div>
-    </section>
+    </header>
+
     <div class="flex flex-1 overflow-auto">
         <section class="w-full p-4">
             <div class="flex items-center">
                 <div class="w-1/4">
-                    <img src="https://img.freepik.com/foto-gratis/chico-guapo-seguro-posando-contra-pared-blanca_176420-32936.jpg" alt="Profile Picture" class="rounded-full w-100 h-100">
+                    <img src="https://img.freepik.com/free-photo/handsome-confident-man-posing-against-white-wall_176420-32936.jpg" alt="Profile Picture of John Doe" class="rounded-full w-full h-full object-cover">
                 </div>
                 <div class="w-3/4 ml-4">
                     <div class="bg-gray-800 rounded-lg p-4 overflow-auto">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <span class="block mb-2 text-white">Name: <span class="text-white">John Doe</span></span>
-                                <span class="block mb-2 text-white">Age: <span class="text-white">30</span></span>
-                                <span class="block mb-2 text-white">Country: <span class="text-white">USA</span></span>
-                            </div>
+                        <div>
+                            <form action="/update_name" method="POST" class="mb-4">
+                                <label for="name" class="block mb-2 text-white">Name:</label>
+                                <input type="text" id="name" name="name" value="John Doe" class="bg-gray-700 text-white p-2 rounded">
+                                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded ml-2">Update Name</button>
+                            </form>
+                            <span class="block mb-2 text-white">Email: <strong>johndoe@example.com</strong></span>
+                            <span class="block mb-2 text-white">Phone: <strong>+1234567890</strong></span>
+                            <span class="block mb-2 text-white">Member since: <strong>2020-01-01</strong></span>
                         </div>
-                        <div class="flex justify-between items-center mt-4">
-                            <div>
-                                <span class="block mb-2 text-white">Email: <span class="text-white">johndoe@example.com</span></span>
-                                <span class="block mb-2 text-white">Phone: <span class="text-white">+1234567890</span></span>
-                                <span class="block mb-2 text-white">Member since: <span class="text-white">2020-01-01</span></span>
-                            </div>
-                        </div>
-                        
                     </div>
                 </div>
             </div>
         </section>
     </div>
-    <section class="px-4 sm:px-6 lg:px-8 bg-gray-900 text-white py-4">
+
+    <footer class="px-4 sm:px-6 lg:px-8 bg-gray-900 text-white py-4">
         <div class="flex justify-between items-center">
             <h2 class="text-lg font-bold">My Bets:</h2>
             <div class="flex items-center">
-                <span class="text-lg font-bold mr-4">Available Balance: <span class="text-white">$500</span></span> 
-                    <a href="/add_funds" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition ease-in-out duration-300 transform hover:-translate-y-1">
-                        Add Funds
-                    </a>
+                <span class="text-lg font-bold mr-4">Available Balance: <strong>$500</strong></span> 
+                <form action="/add_funds" method="POST" class="inline">
+                    <input type="number" name="amount" placeholder="Amount" class="bg-gray-700 text-white p-2 rounded" min="1">
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded">Add Funds</button>
+                </form>
+                <form action="/remove_funds" method="POST" class="inline ml-4">
+                    <input type="number" name="amount" placeholder="Amount" class="bg-gray-700 text-white p-2 rounded" min="1">
+                    <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded">Remove Funds</button>
+                </form>
            </div>
         </div>
-    </section>
+    </footer>
+
     <div class="flex flex-1 overflow-auto">
         <section class="w-full p-4">
             <div class="bg-gray-800 rounded-lg p-4 overflow-auto">
@@ -50,28 +53,14 @@
                     <li class="mb-4 bg-gray-900 p-4 rounded-lg shadow-lg text-white">
                         <div class="flex justify-between items-center">
                             <div>
-                                <span class="mr-2">Bet 1 - RealMadrid/Atltic - LaLiga</span>
-                                <span class="mr-2">Amount: 200</span>
+                                <span class="mr-2">Bet 1 - Real Madrid vs Atlético - La Liga</span>
+                                <span class="mr-2">Amount: $200</span>
                                 <span class="mr-2">Odd: 3.5</span>
                             </div>
-                            <div class="flex space-x-2">
-                                <span class="mr-2">Layed</span>
-                            </div>
+                            <span class="mr-2">Layed</span>
                         </div>
                     </li>
-                    <li class="mb-4 bg-gray-900 p-4 rounded-lg shadow-lg text-white">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <span class="mr-2">Bet 2 - RealMadrid/Atltic - LaLiga</span>
-                                <span class="mr-2">Amount: 200</span>
-                                <span class="mr-2">Odd: 3.5</span>
-                            </div>
-                            <div class="flex space-x-2">
-                                <span class="mr-2">Backed</span>
-                            </div>
-                        </div>
-                    </li>
-                    <!-- More bets would be added here -->
+                    <!-- Additional bets can be added here -->
                 </ul>
             </div>
         </section>
