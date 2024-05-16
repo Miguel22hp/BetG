@@ -1,6 +1,8 @@
 defmodule Betunfair.Market do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
+
 
   schema "markets" do
     field :description, :string
@@ -12,7 +14,6 @@ defmodule Betunfair.Market do
 
   defmodule SupervisorMarket do
     use Supervisor
-    use GenServer
 
     def start_link() do
       Supervisor.start_link(__MODULE__, [], name: :market_supervisor)
@@ -88,7 +89,7 @@ defmodule Betunfair.Market do
 
 
     def market_create(name, description) do
-      case GenServer.call(:market_supervisor, {:market_create, name, description}) do
+      case GenServer.call(:gestor_market, {:market_create, name, description}) do
         {:ok, market_id} ->
           {:ok, market_id}
         {:error, reason, texto} ->
