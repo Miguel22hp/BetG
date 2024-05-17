@@ -58,12 +58,31 @@ defmodule Betunfair.User do
       end
     end
 
+    def load_user() do
+      users = Betunfair.Repo.all(Betunfair.User)
+      #Enum.each(users, &createProcessUser/1)
+      for user <- users do
+        createProcessUser(user)
+        Process.sleep(100) # Adds 100 ms delay between process creation sothey do not select the same PID
+      end
+    end
+
+    def createProcessUser(user) do
+      child_name = :"user_#{user.id}"
+      IO.puts("Creando proceso #{child_name}")
+      if Process.whereis(child_name) == nil do
+        IO.puts("Dentro del if #{child_name}")
+        Supervisor.start_child(:user_supervisor, {Betunfair.User.OperationsUser, {:args, child_name, user.id}})
+      end
+    end
+
   end
 
 
   defmodule OperationsUser do
     use GenServer
     def start_link({:args, name, user_id}) do
+      IO.puts("Creando proceso en  OperationsUser #{name}")
       GenServer.start_link(__MODULE__,{user_id} , name: name)
     end
 
