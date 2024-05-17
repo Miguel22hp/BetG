@@ -1,9 +1,8 @@
-defmodule Betunfair.Bets do
+defmodule Betunfair.Bet do
   use Ecto.Schema
   import Ecto.Changeset
 
   schema "bets" do
-    field :id_bets, :integer
     field :odds, :integer
     field :original_stake, :integer
     field :remaining_stake, :integer
@@ -15,10 +14,9 @@ defmodule Betunfair.Bets do
   end
 
   @doc false
-  def changeset(bets, attrs) do
-    bets
-    |> cast(attrs, [:id_bets, :odds, :type, :original_stake, :remaining_stake])
-    |> validate_required([:id_bets, :odds, :type, :original_stake, :remaining_stake])
-    |> unique_constraint(:id_bets)
+  def changeset(bet, attrs) do
+    bet
+    |> cast(attrs, [:odds, :type, :original_stake, :remaining_stake])
+    |> validate_required([:odds, :type, :original_stake, :remaining_stake])
   end
 end
