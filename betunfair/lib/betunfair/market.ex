@@ -83,6 +83,29 @@ defmodule Betunfair.Market do
       end
     end
 
+    def handle_call({:market_list}, _from, state) do
+      markets = Betunfair.Repo.all(Betunfair.Market)
+      case markets do
+        [] ->
+          {:reply, {:error, "No hay mercados"}, state}
+        _markets ->
+          market_ids = Enum.map(markets, &(&1.id))
+          {:reply, {:ok, market_ids}, state}
+      end
+    end
+
+    def handle_call({:market_list_active}, _from, state) do
+      markets = Betunfair.Repo.all(Betunfair.Market)
+      case markets do
+        [] ->
+          {:reply, {:error, "No hay mercados"}, state}
+        _markets ->
+          active_markets = Enum.filter(markets, fn market -> market.status == "active" end)
+          market_ids = Enum.map(active_markets, &(&1.id))
+          {:reply, {:ok, market_ids}, state}
+      end
+    end
+
 
     def market_create(name, description) do
       case GenServer.call(:market_gestor, {:market_create, name, description}) do
@@ -90,6 +113,24 @@ defmodule Betunfair.Market do
           {:ok, market_id}
         {:error, reason, texto} ->
           {:error, reason, texto}
+      end
+    end
+
+    def market_list() do
+      case GenServer.call(:market_gestor, {:market_list}) do
+        {:ok, ids} ->
+          {:ok, ids}
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end
+
+    def market_list_active() do
+      case GenServer.call(:market_gestor, {:market_list_active}) do
+        {:ok, ids} ->
+          {:ok, ids}
+        {:error, reason} ->
+          {:error, reason}
       end
     end
 
