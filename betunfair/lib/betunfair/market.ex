@@ -1,6 +1,8 @@
 defmodule Betunfair.Market do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
+
 
   schema "markets" do
     field :description, :string
@@ -50,7 +52,6 @@ defmodule Betunfair.Market do
           {:error, "No se pudo insertar el mercado: #{inspect(changeset.errors)}"}
       end
     end
-
   end
 
   defmodule GestorMarket do
@@ -58,6 +59,7 @@ defmodule Betunfair.Market do
 
     def start_link([]) do
       GenServer.start_link(__MODULE__, [], name: :market_gestor)
+
     end
 
     def init(args) do
@@ -71,6 +73,7 @@ defmodule Betunfair.Market do
           # No hay ningún mercado con el mismo nombre, puedes proceder a crear el mercado
           # Aquí iría la lógica para crear el mercado
           case Betunfair.Market.SupervisorMarket.add_child_operation(name, description) do
+
             {:ok, market_id} ->
               {:reply, {:ok, market_id}, state}
             {:error, reason, texto} ->
@@ -82,6 +85,7 @@ defmodule Betunfair.Market do
           {:reply, {:error, "Ya existe un mercado con el mismo nombre"}, state}
       end
     end
+
 
     def handle_call({:market_list}, _from, state) do
       markets = Betunfair.Repo.all(Betunfair.Market)
@@ -103,6 +107,7 @@ defmodule Betunfair.Market do
           active_markets = Enum.filter(markets, fn market -> market.status == "active" end)
           market_ids = Enum.map(active_markets, &(&1.id))
           {:reply, {:ok, market_ids}, state}
+
       end
     end
 
