@@ -7,7 +7,6 @@ defmodule Betunfair.User do
     field :balance, :integer
     field :id_users, :string
     field :name, :string
-    field :user_identifier, :integer
 
     timestamps(type: :utc_datetime)
   end
