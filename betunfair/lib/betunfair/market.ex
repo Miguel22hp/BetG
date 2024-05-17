@@ -25,13 +25,11 @@ defmodule Betunfair.Market do
       ]
       Supervisor.init(children, strategy: :one_for_one)
     end
-
-
-
   end
 
   defmodule GestorMarket do
     use GenServer
+
 
     def start_link({:args}) do
       GenServer.start_link(__MODULE__, [], name: :gestor_market)
@@ -77,6 +75,7 @@ defmodule Betunfair.Market do
       end
     end
 
+
     def insert_market(name, description) do
       changeset = Betunfair.Market.changeset(%Betunfair.Market{}, %{name: name, description: description, status: "active"})
       case Betunfair.Repo.insert(changeset) do
@@ -100,10 +99,8 @@ defmodule Betunfair.Market do
   end
 
 
-
   defmodule OperationsMarket do
     use GenServer
-
     def start_link({:args, name, id}) do
       GenServer.start_link(__MODULE__, {:args, name, id}, name: name)
     end
@@ -111,6 +108,7 @@ defmodule Betunfair.Market do
     def init({:args, name, id}) do
       IO.puts("Market #{name} created with ID: #{id}")
       {:ok, %{name: name, id: id}}
+
     end
 
 

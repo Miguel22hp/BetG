@@ -18,6 +18,8 @@ defmodule BetunfairWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    get "/bets", BetsController, :bets
+    get "/users/:id/profile", ProfileController, :profile
   end
 
   # Other scopes may use custom stacks.
