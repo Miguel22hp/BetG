@@ -159,6 +159,37 @@ defmodule Betunfair.Market do
       {:ok, market_id}
     end
 
+    def market_cancel(market_id) do
+
+    end
+
+    def market_freeze(market_id) do
+
+    end
+
+    def market_settle(market_id, result) do
+
+    end
+
+    def market_bets(market_id) do
+
+    end
+
+    def market_get(market_id) do
+
+    end
+
+    def market_match(market_id) do
+
+    end
+
+    def market_pending_backs(market_id) do
+
+    end
+
+    def market_pending_lays(market_id) do
+
+    end
 
 
   end
