@@ -29,7 +29,6 @@ defmodule Betunfair.User do
 
     def load_user() do
       users = Betunfair.Repo.all(Betunfair.User)
-      #Enum.each(users, &createProcessUser/1)
       for user <- users do
         createProcessUser(user)
         Process.sleep(100) # Adds 100 ms delay between process creation sothey do not select the same PID
