@@ -41,19 +41,42 @@ defmodule BetunfairWeb.ProfileController do
   defp redirect_to_profile(conn, id, token) do
     case OperationsUser.user_get(id) do
       {:ok, user} ->
-        Logger.info("Usuario obtenido exitosamente: #{inspect(user)}")
-        IO.puts("User: #{inspect(user)}")
-        render(conn, "profile.html", user: %{
-          id: id,
-          name: user.name,
-          balance: user.balance,
-          csrf_token: token
-        })
+        case mock_get_user_bets(id) do
+          {:ok, bets} ->
+            Logger.info("Usuario obtenido exitosamente: #{inspect(user)}")
+            render(conn, "profile.html", user: %{
+              id: id,
+              name: user.name,
+              balance: user.balance,
+              csrf_token: token,
+              bets: bets
+            })
+          {:error, reason} ->
+            Logger.error("Error al obtener las apuestas del usuario: #{reason}")
+            conn
+            |> put_flash(:error, reason)
+            |> redirect(to: "/")
+        end
       {:error, reason} ->
         Logger.error("Error al obtener el usuario: #{reason}")
         conn
         |> put_flash(:error, reason)
         |> redirect(to: "/")
     end
+  end
+
+  defp mock_get_user_bets(_id) do
+    {:ok, [
+      %{id: 1, amount: 50, status: "win", type: "back"},
+      %{id: 2, amount: 30, status: "lose", type: "lay"},
+      %{id: 3, amount: 20, status: "pending", type: "back"},
+      %{id: 4, amount: 40, status: "win", type: "lay"},
+      %{id: 5, amount: 25, status: "lose", type: "back"},
+      %{id: 6, amount: 60, status: "pending", type: "lay"},
+      %{id: 7, amount: 35, status: "win", type: "back"},
+      %{id: 8, amount: 45, status: "lose", type: "lay"},
+      %{id: 9, amount: 55, status: "pending", type: "back"},
+      %{id: 10, amount: 70, status: "win", type: "lay"}
+    ]}
   end
 end

@@ -9,16 +9,15 @@
         <section class="w-full p-4">
             <div class="flex items-center">
                 <div class="w-1/4">
-                    <img src="https://img.freepik.com/free-photo/handsome-confident-man-posing-against-white-wall_176420-32936.jpg" alt={"Profile Picture of #{@user.name}"} class="rounded-full w-full h-full object-cover">
+                    <img src="https://img.freepik.com/free-photo/handsome-confident-man-posing-against-white-wall_176420-32936.jpg" alt="Profile Picture of {@user.name}" class="rounded-full w-full h-full object-cover">
                 </div>
                 <div class="w-3/4 ml-4">
                     <div class="bg-gray-800 rounded-lg p-4 overflow-auto">
                         <div>
                             <form action="/update_name" method="POST" class="mb-4">
                                 <input type="hidden" name="_csrf_token" value={@user.csrf_token}>
-                                <label for="name" class="block mb-2 text-white">Name:</label>
-                                <input type="text" id="name" name="name" value={@user.name} class="bg-gray-700 text-white p-2 rounded">
-                                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded ml-2">Update Name</button>
+                                <label for="name" class="block mb-2 text-white"><strong>Name:</strong></label>
+                                <input type="text" id="name" name="name" value={@user.name} class="bg-gray-700 text-white p-2 rounded" readonly>
                             </form>
                         </div>
                         <div class="flex justify-between items-center mt-4">
@@ -45,7 +44,50 @@
         </section>
     </div>
 
-    <section class="px-4 sm:px-6 lg:px-8 bg-gray-900 text-white py-4 mb-4">
-        <!-- Aquí puedes añadir contenido adicional si es necesario -->
-    </section>
+    <div class="bg-gray-800 rounded-lg p-2 overflow-hidden m-4">
+        <h2 class="text-lg font-bold text-white mb-4">Your Bets</h2>
+        <div class="max-h-96 overflow-y-scroll p-4">
+            <%= if @user.bets do %>
+                <ul>
+                    <%= for bet <- @user.bets do %>
+                        <li class="mb-2 p-4 bg-gray-700 rounded-lg shadow-lg flex justify-between items-center">
+                            <div>
+                                <span class="block text-white font-semibold">Bet ID: <%= bet.id %></span>
+                                <span class="block text-white">Amount: <strong>$<%= bet.amount %></strong></span>
+                            </div>
+                            <div class="text-right">
+                                <span class="block text-white">Type: 
+                                    <%= case bet.type do %>
+                                        <% "lay" -> %>
+                                            <span class="text-blue-400 font-bold"><%= bet.type %></span>
+                                        <% "back" -> %>
+                                            <span class="text-purple-400 font-bold"><%= bet.type %></span>
+                                        <% _ -> %>
+                                            <span class="text-gray-400 font-bold"><%= bet.type %></span>
+                                    <% end %>
+                                </span>
+                                <span class="block text-white">Status: 
+                                    <%= case bet.status do %>
+                                        <% "win" -> %>
+                                            <span class="text-green-400 font-bold"><%= bet.status %></span>
+                                        <% "lose" -> %>
+                                            <span class="text-red-400 font-bold"><%= bet.status %></span>
+                                        <% "pending" -> %>
+                                            <span class="text-yellow-400 font-bold"><%= bet.status %></span>
+                                        <% _ -> %>
+                                            <span class="text-gray-400 font-bold"><%= bet.status %></span>
+                                    <% end %>
+                                </span>
+                            </div>
+                        </li>
+                    <% end %>
+                </ul>
+            <% else %>
+                <p class="text-white">No bets found.</p>
+                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded mt-4">
+                    <a href="/bets">Place a Bet</a>
+                </button>
+            <% end %>
+        </div>
+    </div>
 </section>
