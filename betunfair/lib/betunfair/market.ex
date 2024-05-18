@@ -20,7 +20,26 @@ defmodule Betunfair.Market do
       children = [
         {Betunfair.Market.GestorMarket, []}
       ]
-      Supervisor.init(children, strategy: :one_for_one)
+      state = Supervisor.init(children, strategy: :one_for_one)
+      Task.start(fn -> load_market() end)
+      state
+    end
+
+    def load_market() do
+      markets = Betunfair.Repo.all(Betunfair.Market)
+      for market <- markets do
+        createProcessMarket(market)
+        Process.sleep(100) # Adds 100 ms delay between process creation sothey do not select the same PID
+      end
+    end
+
+    def createProcessMarket(market) do
+      child_name = :"market_#{market.id}"
+      IO.puts("Creando proceso #{child_name}")
+      if Process.whereis(child_name) == nil do
+        IO.puts("Dentro del if #{child_name}")
+        Supervisor.start_child(:market_supervisor, {Betunfair.Market.OperationsMarket, {:args, child_name, market.id}})
+      end
     end
 
   end
@@ -140,6 +159,8 @@ defmodule Betunfair.Market do
           {:error, reason}
       end
     end
+
+
 
   end
 
