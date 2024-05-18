@@ -144,6 +144,7 @@ defmodule Betunfair.User do
     end
 
     def deposit(user_id, amount) do
+      IO.puts("Depositando #{amount} al usuario #{user_id}")
       if amount <= 0 do
         {:error, "La cantidad a depositar debe ser mayor a 0"}
       else

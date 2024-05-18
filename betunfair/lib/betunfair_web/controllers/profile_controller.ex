@@ -10,11 +10,11 @@ defmodule BetunfairWeb.ProfileController do
 
   def add_funds(conn, %{"id" => id, "amount" => amount}) do
     case OperationsUser.user_deposit(id, String.to_integer(amount)) do
-      :ok ->
+      {:ok} ->
         Logger.info("Fondos añadidos exitosamente para el usuario #{id}")
         conn
         |> put_flash(:info, "Funds added successfully.")
-        |> redirect(to: "/profile/#{id}")
+        |> redirect(to: "/users/#{id}/profile")
       {:error, reason} ->
         Logger.error("Error al añadir fondos para el usuario #{id}: #{reason}")
         conn
@@ -25,11 +25,11 @@ defmodule BetunfairWeb.ProfileController do
 
   def withdraw_funds(conn, %{"id" => id, "amount" => amount}) do
     case OperationsUser.user_withdraw(id, String.to_integer(amount)) do
-      :ok ->
+      {:ok} ->
         Logger.info("Fondos retirados exitosamente para el usuario #{id}")
         conn
         |> put_flash(:info, "Funds withdrawn successfully.")
-        |> redirect(to: "/profile/#{id}")
+        |> redirect(to: "/users/#{id}/profile")
       {:error, reason} ->
         Logger.error("Error al retirar fondos para el usuario #{id}: #{reason}")
         conn
@@ -55,11 +55,5 @@ defmodule BetunfairWeb.ProfileController do
         |> put_flash(:error, reason)
         |> redirect(to: "/")
     end
-  end
-
-  defp get_user_bets(id) do
-    [
-      %{id: 1, description: "Real Madrid vs Atlético - La Liga", amount: 200, odd: 3.5, status: "Layed"}
-    ]
   end
 end
