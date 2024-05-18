@@ -23,6 +23,45 @@ defmodule Betunfair.Market do
       Supervisor.init(children, strategy: :one_for_one)
     end
 
+  end
+
+  defmodule GestorMarket do
+    use GenServer
+
+    def start_link([]) do
+      GenServer.start_link(__MODULE__, [], name: :market_gestor)
+    end
+
+    def init(args) do
+      IO.puts("Gestor de mercado creado con nombre")
+      {:ok, args}
+    end
+
+    def handle_call({:market_create, name, description}, _from, state) do
+      case Betunfair.Repo.get_by(Betunfair.Market, name: name) do
+        nil ->
+          # No hay ningún mercado con el mismo nombre, puedes proceder a crear el mercado
+          # Aquí iría la lógica para crear el mercado
+          case Betunfair.Market.GestorMarket.add_child_operation(name, description) do
+            {:ok, market_id} ->
+              # Create from GestorBet a SupervisorMarketBet process
+              case Betunfair.Bet.GestorBet.add_child_operation(market_id) do
+                {:ok} ->
+                  {:reply, {:ok, market_id}, state}
+                {:error, reason} ->
+                  {:reply, {:error, reason, "ERROR AL CREAR EL HIJO"}, state}
+              end
+              #{:reply, {:ok, market_id}, state}
+            {:error, reason, texto} ->
+              {:reply, {:error, reason, texto}, state}
+          end
+        _market ->
+          # Ya existe un mercado con el mismo nombre, maneja este caso según tus necesidades
+          # Por ejemplo, podrías devolver un error o lanzar una excepción
+          {:reply, {:error, "Ya existe un mercado con el mismo nombre"}, state}
+      end
+    end
+
     def add_child_operation(name, description) do
       case insert_market(name, description) do
         {:ok, market} ->
@@ -48,45 +87,6 @@ defmodule Betunfair.Market do
           {:ok, market}
         {:error, changeset} ->
           {:error, "No se pudo insertar el mercado: #{inspect(changeset.errors)}"}
-      end
-    end
-
-  end
-
-  defmodule GestorMarket do
-    use GenServer
-
-    def start_link([]) do
-      GenServer.start_link(__MODULE__, [], name: :market_gestor)
-    end
-
-    def init(args) do
-      IO.puts("Gestor de mercado creado con nombre")
-      {:ok, args}
-    end
-
-    def handle_call({:market_create, name, description}, _from, state) do
-      case Betunfair.Repo.get_by(Betunfair.Market, name: name) do
-        nil ->
-          # No hay ningún mercado con el mismo nombre, puedes proceder a crear el mercado
-          # Aquí iría la lógica para crear el mercado
-          case Betunfair.Market.SupervisorMarket.add_child_operation(name, description) do
-            {:ok, market_id} ->
-              # Create from GestorBet a SupervisorMarketBet process
-              case Betunfair.Bet.GestorBet.add_child_operation(market_id) do
-                {:ok} ->
-                  {:reply, {:ok, market_id}, state}
-                {:error, reason} ->
-                  {:reply, {:error, reason, "ERROR AL CREAR EL HIJO"}, state}
-              end
-              #{:reply, {:ok, market_id}, state}
-            {:error, reason, texto} ->
-              {:reply, {:error, reason, texto}, state}
-          end
-        _market ->
-          # Ya existe un mercado con el mismo nombre, maneja este caso según tus necesidades
-          # Por ejemplo, podrías devolver un error o lanzar una excepción
-          {:reply, {:error, "Ya existe un mercado con el mismo nombre"}, state}
       end
     end
 
