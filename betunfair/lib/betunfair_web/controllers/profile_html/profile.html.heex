@@ -15,6 +15,7 @@
                     <div class="bg-gray-800 rounded-lg p-4 overflow-auto">
                         <div>
                             <form action="/update_name" method="POST" class="mb-4">
+                                <input type="hidden" name="_csrf_token" value={@user.csrf_token}>
                                 <label for="name" class="block mb-2 text-white">Name:</label>
                                 <input type="text" id="name" name="name" value={@user.name} class="bg-gray-700 text-white p-2 rounded">
                                 <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded ml-2">Update Name</button>
@@ -25,11 +26,13 @@
                             <div class="flex items-center ml-4">
                                 <span class="text-lg font-bold text-white mr-4">Available Balance: <strong>$<%= @user.balance %></strong></span>
                                 <form action="/add_funds" method="POST" class="inline">
+                                    <input type="hidden" name="_csrf_token" value={@user.csrf_token}>
                                     <input type="hidden" name="id" value={@user.id}>
                                     <input type="number" name="amount" placeholder="Amount" class="bg-gray-700 text-white p-2 rounded" min="1">
                                     <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded">Add Funds</button>
                                 </form>
                                 <form action="/remove_funds" method="POST" class="inline ml-4">
+                                    <input type="hidden" name="_csrf_token" value={@user.csrf_token}>
                                     <input type="hidden" name="id" value={@user.id}>
                                     <input type="number" name="amount" placeholder="Amount" class="bg-gray-700 text-white p-2 rounded" min="1">
                                     <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded">Remove Funds</button>
