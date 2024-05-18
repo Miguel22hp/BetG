@@ -4,6 +4,7 @@ defmodule Betunfair.User do
   alias Betunfair.Repo
   require Logger
 
+
   schema "users" do
     field :balance, :integer
     field :id_users, :string
@@ -14,10 +15,9 @@ defmodule Betunfair.User do
 
   defmodule SupervisorUser do
     use Supervisor
-    require Logger
 
     def start_link(_) do
-      Supervisor.start_link(_MODULE_, [], name: :user_supervisor)
+      Supervisor.start_link(__MODULE__, [], name: :user_supervisor)
     end
 
     def init(_) do
@@ -31,8 +31,12 @@ defmodule Betunfair.User do
     def user_create(id , name) do
       case Betunfair.Repo.get_by(Betunfair.User, id_users: id) do
         nil ->
+          # No hay ningún usuario con el mismo ID, puedes proceder a crear el usuario
+          # Aquí iría la lógica para crear el usuario
           add_child_operation(name, id)
         _user ->
+          # Ya existe un usuario con el mismo ID, maneja este caso según tus necesidades
+          # Por ejemplo, podrías devolver un error o lanzar una excepción
           {:error, "Ya existe un usuario con el mismo ID"}
       end
     end
@@ -40,15 +44,9 @@ defmodule Betunfair.User do
     def add_child_operation(name, id) do
       case insert_user(id, name) do
         {:ok, user} ->
-          child_name = :"user_#{user.id}"
-          case Supervisor.start_child(:user_supervisor, {Betunfair.User.OperationsUser, {:args, child_name, user.id}}) do
-            {:ok, _child} ->
-              Logger.info("Proceso hijo #{child_name} creado correctamente")
-              {:ok, user.id}
-            {:error, reason} ->
-              Logger.error("Error al crear el proceso hijo #{child_name}: #{inspect(reason)}")
-              {:error, reason}
-          end
+          child_name = :"user_#{user.id}" #nombre del hijo
+          Supervisor.start_child(:user_supervisor, {Betunfair.User.OperationsUser, {:args, child_name, user.id}})
+          {:ok, user.id}
         {:error, reason} ->
           {:error, reason}
       end
@@ -56,6 +54,7 @@ defmodule Betunfair.User do
 
     def insert_user(id, name) do
       changeset = Betunfair.User.changeset(%Betunfair.User{}, %{id_users: id, name: name, balance: 0})
+
 
       case Betunfair.Repo.insert(changeset) do
         {:ok, user} ->
@@ -67,8 +66,10 @@ defmodule Betunfair.User do
 
     def load_user() do
       users = Betunfair.Repo.all(Betunfair.User)
+      #Enum.each(users, &createProcessUser/1)
       for user <- users do
         createProcessUser(user)
+        Process.sleep(100) # Adds 100 ms delay between process creation sothey do not select the same PID
       end
     end
 
@@ -90,15 +91,15 @@ defmodule Betunfair.User do
         Logger.info("Proceso #{child_name} ya existe")
       end
     end
+
   end
+
 
   defmodule OperationsUser do
     use GenServer
-    require Logger
-
     def start_link({:args, name, user_id}) do
-      Logger.info("Creando proceso en OperationsUser #{name}")
-      GenServer.start_link(_MODULE_, {user_id}, name: name)
+      IO.puts("Creando proceso en  OperationsUser #{name}")
+      GenServer.start_link(__MODULE__,{user_id} , name: name)
     end
 
     def init(user_id) do
@@ -147,6 +148,7 @@ defmodule Betunfair.User do
       if amount <= 0 do
         {:error, "La cantidad a retirar debe ser mayor a 0"}
       else
+
         case Betunfair.Repo.get(Betunfair.User, user_id) do
           nil ->
             {:error, "No se encontró el usuario"}
@@ -162,12 +164,13 @@ defmodule Betunfair.User do
                 {:error, changeset} ->
                   {:error, "No se pudo actualizar el usuario: #{inspect(changeset.errors)}"}
               end
-            end
-        end
-      end
-    end
+          end # if new_balance < 0
+        end # case Betunfair.Repo.get(Betunfair.User, user_id)
+      end # if amount <= 0
+    end # function withdraw
 
     def handle_call({:get, id}, _from, user_id) do
+
       case Betunfair.Repo.get(Betunfair.User, id) do
         nil ->
           {:reply, {:error, "No se encontró el usuario"}, user_id}
@@ -175,6 +178,8 @@ defmodule Betunfair.User do
           {:reply, user, user_id}
       end
     end
+
+
 
     #--- Client functions ---
     def user_deposit(id, amount) do
@@ -187,7 +192,7 @@ defmodule Betunfair.User do
     end
 
     def user_withdraw(id, amount) do
-      Logger.info(:"user_#{id}")
+      IO.puts(:"user_#{id}")
       case GenServer.call(:"user_#{id}", {:withdraw, amount, id}) do
         {:ok, new_balance} ->
           {:ok}
@@ -212,6 +217,7 @@ defmodule Betunfair.User do
     def user_bets(id) do
       GenServer.call(:"user_#{id}", {:bet, id})
     end
+
   end
 
   @doc false
