@@ -72,7 +72,14 @@ defmodule Betunfair.Market do
           # Aquí iría la lógica para crear el mercado
           case Betunfair.Market.SupervisorMarket.add_child_operation(name, description) do
             {:ok, market_id} ->
-              {:reply, {:ok, market_id}, state}
+              # Create from GestorBet a SupervisorMarketBet process
+              case Betunfair.Bet.GestorBet.add_child_operation(market_id) do
+                {:ok} ->
+                  {:reply, {:ok, market_id}, state}
+                {:error, reason} ->
+                  {:reply, {:error, reason, "ERROR AL CREAR EL HIJO"}, state}
+              end
+              #{:reply, {:ok, market_id}, state}
             {:error, reason, texto} ->
               {:reply, {:error, reason, texto}, state}
           end

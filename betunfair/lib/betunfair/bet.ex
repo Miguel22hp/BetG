@@ -42,21 +42,49 @@ defmodule Betunfair.Bet do
       {:ok, args}
     end
 
+    def handle_call({:add_child_operation, market_id}, _from, state) do
+      child_name = :"supervisor_bet_market#{market_id}"
+      child_spec = Betunfair.Bet.SupervisorMarketBet.child_spec({:args, child_name, market_id})
+      case Supervisor.start_child(:bet_supervisor, child_spec) do
+        {:ok, _pid} ->
+          {:reply, {:ok}, state}
+        {:error, reason} ->
+          {:reply, {:error, reason, "ERROR AL CREAR EL HIJO"}, state}
+      end
+
+    end
+
     #You manage the operations for creating SupervisorMarketBet processes. They are created when a market is created.
+    def add_child_operation( market_id) do
+      GenServer.call(:bet_gestor, {:add_child_operation, market_id})
+    end
 
   end
 
   defmodule SupervisorMarketBet do
     use Supervisor
-    def start_link() do
-      #Supervisor.start_link(__MODULE__, [], name: :market_bet_supervisor)
+
+    def child_spec({:args, child_name, market_id}) do
+      %{
+        id: child_name,
+        start: {__MODULE__, :start_link, [market_id]},
+        type: :supervisor,
+        restart: :permanent,
+        shutdown: 500
+      }
     end
 
-    def init(_) do
-      #children = [
-      #  {Betunfair.Bet.OperationsBet, []}
-      #]
-      #Supervisor.init(children, strategy: :one_for_one)
+
+    def start_link(market_id) do
+      child_name = :"supervisor_bet_market_#{market_id}"
+      Supervisor.start_link(__MODULE__, market_id, name: child_name)
+    end
+
+    def init(market_id) do
+      children = [
+        {Betunfair.Bet.GestorMarketBet, [market_id]}
+      ]
+      Supervisor.init(children, strategy: :one_for_one)
     end
 
     # A SupervisorMarketBet creates a OperationsBet process as a child of him when a bet is created.
@@ -65,12 +93,13 @@ defmodule Betunfair.Bet do
   defmodule GestorMarketBet do
     use GenServer
 
-    def start_link([]) do
-      #GenServer.start_link(__MODULE__, [], name: :market_bet_gestor)
+    def start_link(market_id) do
+      child_name = :"gestor_bet_market_#{market_id}"
+      GenServer.start_link(__MODULE__, market_id, name: child_name)
     end
 
     def init(args) do
-      #{:ok, args}
+      {:ok, args}
     end
 
     def bet_back(user_id, market_id, stake, odds) do
