@@ -29,6 +29,7 @@ defmodule Betunfair.Market do
       markets = Betunfair.Repo.all(Betunfair.Market)
       for market <- markets do
         createProcessMarket(market)
+        createProcessBetSupervisor(market.id)
         Process.sleep(100) # Adds 100 ms delay between process creation sothey do not select the same PID
       end
     end
@@ -39,6 +40,16 @@ defmodule Betunfair.Market do
       if Process.whereis(child_name) == nil do
         IO.puts("Dentro del if #{child_name}")
         Supervisor.start_child(:market_supervisor, {Betunfair.Market.OperationsMarket, {:args, child_name, market.id}})
+      end
+    end
+
+    def createProcessBetSupervisor(market_id) do
+      child_name = :"supervisor_bet_market_#{market_id}"
+      IO.puts("Creando proceso BetSupervisor #{child_name}")
+      if Process.whereis(child_name) == nil do
+        IO.puts("Dentro del if BetSupervisor #{child_name}")
+        child_spec = Betunfair.Bet.SupervisorMarketBet.child_spec({:args, child_name, market_id})
+        Supervisor.start_child(:bet_supervisor, child_spec)
       end
     end
 
