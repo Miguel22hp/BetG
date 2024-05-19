@@ -210,7 +210,7 @@ defmodule Betunfair.User do
     def user_deposit(id, amount) do
       case GenServer.call(:"user_#{id}", {:deposit, amount, id}) do
         {:ok, new_balance} ->
-          {:ok}
+          :ok
         {:error, reason} ->
           {:error, reason}
       end
@@ -220,7 +220,7 @@ defmodule Betunfair.User do
       IO.puts(:"user_#{id}")
       case GenServer.call(:"user_#{id}", {:withdraw, amount, id}) do
         {:ok, new_balance} ->
-          {:ok}
+          :ok
         {:error, reason} ->
           {:error, reason}
       end
