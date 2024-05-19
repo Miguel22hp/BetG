@@ -231,7 +231,11 @@ defmodule Betunfair.Market do
 
 
     def handle_call({:market_pending_lays, market_id}, _from, state) do
-
+      query = from b in Betunfair.Bet, where: b.market_id == ^market_id and b.type == "lay"
+      bets = Betunfair.Repo.all(query)
+      # recorrer bets entero y comprobar si existe su id en matched
+      result = Enum.filter(bets, &get_unmatched_bets(&1.id, 1))
+      {:reply, {:ok, result}, state}
     end
 
 
@@ -334,7 +338,7 @@ defmodule Betunfair.Market do
         market ->
           case GenServer.call(:"market_#{market_id}", {:market_pending_lays, market_id}) do
             {:ok, bet_ids} ->
-              {:ok, bet_ids}
+              {:ok, Enum.map(bet_ids, &({&1.odds,&1.id}))}
             {:error, reason} ->
               {:error, reason}
           end
