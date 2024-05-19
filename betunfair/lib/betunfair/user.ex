@@ -157,8 +157,8 @@ defmodule Betunfair.User do
       end
     end
 
-    def handle_call({:withdraw, amount, id}, _from, user_id) do
-      case withdraw(id, amount) do
+    def handle_call({:withdraw, amount, id, user}, _from, user_id) do
+      case withdraw(id, amount, user) do
         {:ok, new_balance} ->
           {:reply, {:ok, new_balance}, new_balance}
         {:error, reason} ->
@@ -166,28 +166,22 @@ defmodule Betunfair.User do
       end
     end
 
-    def withdraw(user_id, amount) do
+    def withdraw(user_id, amount, user) do
       if amount <= 0 do
         {:error, "La cantidad a retirar debe ser mayor a 0"}
       else
-
-        case Betunfair.Repo.get(Betunfair.User, user_id) do
-          nil ->
-            {:error, "No se encontró el usuario"}
-          user ->
-            new_balance = user.balance - amount
-            if new_balance < 0 do
-              {:error, "No tienes suficiente saldo para retirar esa cantidad"}
-            else
-              changeset = Betunfair.User.changeset(user, %{balance: new_balance})
-              case Betunfair.Repo.update(changeset) do
-                {:ok, _user} ->
-                  {:ok, new_balance}
-                {:error, changeset} ->
-                  {:error, "No se pudo actualizar el usuario: #{inspect(changeset.errors)}"}
-              end
-          end # if new_balance < 0
-        end # case Betunfair.Repo.get(Betunfair.User, user_id)
+        new_balance = user.balance - amount
+        if new_balance < 0 do
+          {:error, "No tienes suficiente saldo para retirar esa cantidad"}
+        else
+          changeset = Betunfair.User.changeset(user, %{balance: new_balance})
+          case Betunfair.Repo.update(changeset) do
+            {:ok, _user} ->
+              {:ok, new_balance}
+            {:error, changeset} ->
+              {:error, "No se pudo actualizar el usuario: #{inspect(changeset.errors)}"}
+          end
+        end # if new_balance < 0
       end # if amount <= 0
     end # function withdraw
 
@@ -232,12 +226,17 @@ defmodule Betunfair.User do
     end
 
     def user_withdraw(id, amount) do
-      IO.puts(:"user_#{id}")
-      case GenServer.call(:"user_#{id}", {:withdraw, amount, id}) do
-        {:ok, new_balance} ->
-          :ok
-        {:error, reason} ->
-          {:error, reason}
+      #IO.puts(:"user_#{id}")
+      case Betunfair.Repo.get(Betunfair.User, id) do
+        nil ->
+          {:error, "No se encontró el usuario"}
+        user ->
+          case GenServer.call(:"user_#{id}", {:withdraw, amount, id, user}) do
+            {:ok, new_balance} ->
+              :ok
+            {:error, reason} ->
+              {:error, reason}
+          end
       end
     end
 
