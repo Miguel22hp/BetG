@@ -177,6 +177,7 @@ defmodule Betunfair.Market do
 
   defmodule OperationsMarket do
     use GenServer
+    import Ecto.Query, only: [from: 2]
 
     def child_spec({:args, child_name, market_id}) do
       %{
@@ -198,6 +199,14 @@ defmodule Betunfair.Market do
       {:ok, market_id}
     end
 
+    def handle_call({:market_bets, market_id, market}, _from, state) do
+      query = from b in Betunfair.Bet, where: b.market_id == ^market_id
+      bets = Betunfair.Repo.all(query)
+      #crear un Enumerable.t con los id de las bets
+      bet_ids = Enum.map(bets, &(&1.id))
+      {:reply, {:ok, bet_ids}, state}
+    end
+
     def market_cancel(market_id) do
 
     end
@@ -211,7 +220,17 @@ defmodule Betunfair.Market do
     end
 
     def market_bets(market_id) do
-
+      case Betunfair.Repo.get(Betunfair.Market, market_id) do
+        nil ->
+          {:error, "No se encontró el market"}
+        market ->
+          case GenServer.call(:"market_#{market_id}", {:market_bets, market_id, market}) do
+            {:ok, bet_ids} ->
+              {:ok, bet_ids}
+            {:error, reason} ->
+              {:error, reason}
+          end
+      end
     end
 
     def market_get(market_id) do
