@@ -207,6 +207,17 @@ defmodule Betunfair.Market do
       {:reply, {:ok, bet_ids}, state}
     end
 
+
+    def handle_call({:market_get, market_id}, _from, state) do
+      case Betunfair.Repo.get(Betunfair.Market, market_id) do
+        nil ->
+          {:reply, {:error, "No se encontró el market"}, state}
+        market ->
+          {:reply, {:ok, market}, state}
+      end
+
+    end
+
     def market_cancel(market_id) do
 
     end
@@ -234,7 +245,37 @@ defmodule Betunfair.Market do
     end
 
     def market_get(market_id) do
-
+      case Betunfair.Repo.get(Betunfair.Market, market_id) do
+        nil ->
+          {:error, "No se encontró el market"}
+        market ->
+          case GenServer.call(:"market_#{market_id}", {:market_get, market_id}) do
+            {:ok, market} ->
+              if(market.status == "true") do
+                {:ok, %{
+                  name: market.name,
+                  description: market.description,
+                  status: {:settled, true}
+                }}
+              else
+                if (market.status == "false") do
+                  {:ok, %{
+                    name: market.name,
+                    description: market.description,
+                    status: {:settled, false}
+                  }}
+                else
+                  {:ok, %{
+                    name: market.name,
+                    description: market.description,
+                    status: market.status
+                  }}
+                end
+              end
+            {:error, reason} ->
+              {:error, reason}
+          end
+      end
     end
 
     def market_match(market_id) do
