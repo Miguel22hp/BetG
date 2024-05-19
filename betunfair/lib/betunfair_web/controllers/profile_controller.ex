@@ -38,7 +38,7 @@ Adds funds to the user's account.
 """
 def add_funds(conn, %{"id" => id, "amount" => amount}) do
   case OperationsUser.user_deposit(id, String.to_integer(amount)) do
-    {:ok} ->
+    :ok ->
       Logger.info("Fondos añadidos exitosamente para el usuario #{id}")
       conn
       |> put_flash(:info, "Funds added successfully.")
@@ -66,7 +66,7 @@ Withdraws funds from the user's account.
 """
 def withdraw_funds(conn, %{"id" => id, "amount" => amount}) do
   case OperationsUser.user_withdraw(id, String.to_integer(amount)) do
-    {:ok} ->
+    :ok ->
       Logger.info("Fondos retirados exitosamente para el usuario #{id}")
       conn
       |> put_flash(:info, "Funds withdrawn successfully.")
