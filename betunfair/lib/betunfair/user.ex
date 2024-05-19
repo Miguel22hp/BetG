@@ -196,16 +196,11 @@ defmodule Betunfair.User do
     end
 
     def handle_call({:bet, id}, _from, state) do
-      case Betunfair.Repo.get(Betunfair.User, id) do
-        nil ->
-          {:reply, {:error, "No se encontró el usuario"}, state}
-        user ->
-          query = from b in Betunfair.Bet, where: b.user_id == ^id
-          bets = Betunfair.Repo.all(query)
-          #crear un Enumerable.t con los id de las bets
-          bet_ids = Enum.map(bets, &(&1.id))
-          {:reply, {:ok, bet_ids}, state}
-      end
+      query = from b in Betunfair.Bet, where: b.user_id == ^id
+      bets = Betunfair.Repo.all(query)
+      #crear un Enumerable.t con los id de las bets
+      bet_ids = Enum.map(bets, &(&1.id))
+      {:reply, {:ok, bet_ids}, state}
     end
 
 
@@ -241,25 +236,35 @@ defmodule Betunfair.User do
     end
 
     def user_get(id) do
-      IO.puts(:"user_#{id}")
-      case GenServer.call(:"user_#{id}", {:get, id}) do
+      #IO.puts(:"user_#{id}")
+      case Betunfair.Repo.get(Betunfair.User, id) do
+        nil ->
+          {:error, "No se encontró el usuario"}
         user ->
-          {:ok, %{
-            name: user.name,
-            id: user.id_users,
-            balance: user.balance
-          }}
-        {:error, reason} ->
-          {:error, reason}
+          case GenServer.call(:"user_#{id}", {:get, id}) do
+            user ->
+              {:ok, %{
+                name: user.name,
+                id: user.id_users,
+                balance: user.balance
+              }}
+            {:error, reason} ->
+              {:error, reason}
+          end
       end
     end
 
     def user_bets(id) do
-      case GenServer.call(:"user_#{id}", {:bet, id}) do
-        {:ok, bet_ids} ->
-          bet_ids
-        {:error, reason} ->
-          {:error, reason}
+      case Betunfair.Repo.get(Betunfair.User, id) do
+        nil ->
+          {:error, "No se encontró el usuario"}
+        user ->
+          case GenServer.call(:"user_#{id}", {:bet, id}) do
+            {:ok, bet_ids} ->
+              bet_ids
+            {:error, reason} ->
+              {:error, reason}
+          end
       end
     end
 
