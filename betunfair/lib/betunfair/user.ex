@@ -109,6 +109,7 @@ defmodule Betunfair.User do
 
   defmodule OperationsUser do
     use GenServer
+    import Ecto.Query, only: [from: 2]
 
     def child_spec({:args, child_name, user_id}) do
       %{
@@ -204,6 +205,19 @@ defmodule Betunfair.User do
       end
     end
 
+    def handle_call({:bet, id}, _from, state) do
+      case Betunfair.Repo.get(Betunfair.User, id) do
+        nil ->
+          {:reply, {:error, "No se encontró el usuario"}, state}
+        user ->
+          query = from b in Betunfair.Bet, where: b.user_id == ^id
+          bets = Betunfair.Repo.all(query)
+          #crear un Enumerable.t con los id de las bets
+          bet_ids = Enum.map(bets, &(&1.id))
+          {:reply, {:ok, bet_ids}, state}
+      end
+    end
+
 
 
     #--- Client functions ---
@@ -227,6 +241,7 @@ defmodule Betunfair.User do
     end
 
     def user_get(id) do
+      IO.puts(:"user_#{id}")
       case GenServer.call(:"user_#{id}", {:get, id}) do
         user ->
           {:ok, %{
@@ -240,7 +255,12 @@ defmodule Betunfair.User do
     end
 
     def user_bets(id) do
-      GenServer.call(:"user_#{id}", {:bet, id})
+      case GenServer.call(:"user_#{id}", {:bet, id}) do
+        {:ok, bet_ids} ->
+          bet_ids
+        {:error, reason} ->
+          {:error, reason}
+      end
     end
 
   end
