@@ -1,6 +1,8 @@
 defmodule Betunfair.Market do
   use Ecto.Schema
   import Ecto.Changeset
+  alias Betunfair.Matched
+  alias Betunfair.Bet
 
   schema "markets" do
     field :description, :string
@@ -178,6 +180,7 @@ defmodule Betunfair.Market do
   defmodule OperationsMarket do
     use GenServer
     import Ecto.Query, only: [from: 2]
+    alias Betunfair.Repo
 
     def child_spec({:args, child_name, market_id}) do
       %{
@@ -215,7 +218,35 @@ defmodule Betunfair.Market do
         market ->
           {:reply, {:ok, market}, state}
       end
+    end
 
+    def handle_call({:market_pending_backs, market_id}, _from, state) do
+      # All back bets from market_id
+      query = from b in Betunfair.Bet, where: b.market_id == ^market_id and b.type == "back"
+      bets = Betunfair.Repo.all(query)
+      # recorrer bets entero y comprobar si existe su id en matched
+      result = Enum.filter(bets, &get_unmatched_bets(&1.id, 0))
+      {:reply, {:ok, result}, state}
+    end
+
+
+    def handle_call({:market_pending_lays, market_id}, _from, state) do
+
+    end
+
+
+    defp get_unmatched_bets(bet_id, int) do
+      if(int == 0) do ## back
+        query = from m in Matched,
+                where: m.id_bet_backed == ^bet_id ,
+                select: m.id
+        Repo.all(query) == []
+      else #lay
+        query = from m in Matched,
+                where: m.id_bet_layed == ^bet_id ,
+                select: m.id
+        Repo.all(query) == []
+      end
     end
 
     def market_cancel(market_id) do
@@ -283,11 +314,31 @@ defmodule Betunfair.Market do
     end
 
     def market_pending_backs(market_id) do
-
+      case Betunfair.Repo.get(Betunfair.Market, market_id) do
+        nil ->
+          {:error, "No se encontró el market"}
+        market ->
+          case GenServer.call(:"market_#{market_id}", {:market_pending_backs, market_id}) do
+            {:ok, bet_ids} ->
+              {:ok, Enum.map(bet_ids, &({&1.odds,&1.id}))}
+            {:error, reason} ->
+              {:error, reason}
+          end
+      end
     end
 
     def market_pending_lays(market_id) do
-
+      case Betunfair.Repo.get(Betunfair.Market, market_id) do
+        nil ->
+          {:error, "No se encontró el market"}
+        market ->
+          case GenServer.call(:"market_#{market_id}", {:market_pending_lays, market_id}) do
+            {:ok, bet_ids} ->
+              {:ok, bet_ids}
+            {:error, reason} ->
+              {:error, reason}
+          end
+      end
     end
 
 
