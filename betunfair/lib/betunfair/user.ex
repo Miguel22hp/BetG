@@ -132,8 +132,8 @@ defmodule Betunfair.User do
       {:ok, user_id}
     end
 
-    def handle_call({:deposit, amount, id}, _from, user_id) do
-      case deposit(id, amount) do
+    def handle_call({:deposit, amount, id, user}, _from, user_id) do
+      case deposit(id, amount, user) do
         {:ok, new_balance} ->
           {:reply, {:ok, new_balance}, new_balance}
         {:error, reason} ->
@@ -141,23 +141,19 @@ defmodule Betunfair.User do
       end
     end
 
-    def deposit(user_id, amount) do
+    def deposit(user_id, amount, user) do
       if amount <= 0 do
         {:error, "La cantidad a depositar debe ser mayor a 0"}
       else
-        case Betunfair.Repo.get(Betunfair.User, user_id) do
-          nil ->
-            {:error, "No se encontró el usuario"}
-          user ->
-            new_balance = user.balance + amount
-            changeset = Betunfair.User.changeset(user, %{balance: new_balance})
-            case Betunfair.Repo.update(changeset) do
-              {:ok, _user} ->
-                {:ok, new_balance}
-              {:error, changeset} ->
-                {:error, "No se pudo actualizar el usuario: #{inspect(changeset.errors)}"}
-            end
+        new_balance = user.balance + amount
+        changeset = Betunfair.User.changeset(user, %{balance: new_balance})
+        case Betunfair.Repo.update(changeset) do
+          {:ok, _user} ->
+            {:ok, new_balance}
+          {:error, changeset} ->
+            {:error, "No se pudo actualizar el usuario: #{inspect(changeset.errors)}"}
         end
+
       end
     end
 
@@ -222,11 +218,16 @@ defmodule Betunfair.User do
 
     #--- Client functions ---
     def user_deposit(id, amount) do
-      case GenServer.call(:"user_#{id}", {:deposit, amount, id}) do
-        {:ok, new_balance} ->
-          :ok
-        {:error, reason} ->
-          {:error, reason}
+      case Betunfair.Repo.get(Betunfair.User, id) do
+        nil ->
+          {:error, "No se encontró el usuario"}
+        user ->
+          case GenServer.call(:"user_#{id}", {:deposit, amount, id, user}) do
+            {:ok, new_balance} ->
+              :ok
+            {:error, reason} ->
+              {:error, reason}
+          end
       end
     end
 
