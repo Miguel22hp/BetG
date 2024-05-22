@@ -16,7 +16,7 @@ defmodule Betunfair.Bet do
 
   defmodule SupervisorBet do
     use Supervisor
-    
+
     def start_link(_) do
       Supervisor.start_link(__MODULE__, [], name: :bet_supervisor)
     end
@@ -198,7 +198,7 @@ defmodule Betunfair.Bet do
           else
             case Betunfair.Repo.get(Betunfair.Market, market_id) do
               nil ->
-                {:error, "user with id #{user_id} doesn't exist"}
+                {:error, "market with id #{user_id} doesn't exist"}
               _market ->
                 changeset = Betunfair.User.changeset(user, %{balance: user.balance - stake})
                 case Betunfair.Repo.update(changeset) do
