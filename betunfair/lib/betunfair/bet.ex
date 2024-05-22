@@ -83,7 +83,7 @@ defmodule Betunfair.Bet do
 
     def init(market_id) do
       children = [
-        {Betunfair.Bet.GestorMarketBet, [market_id]}
+        {Betunfair.Bet.GestorMarketBet, {:args, market_id}}
       ]
       Supervisor.init(children, strategy: :one_for_one)
     end
@@ -100,11 +100,42 @@ defmodule Betunfair.Bet do
     end
 
     def init(args) do
+      IO.puts("creando gestor market bet #{args}")
       {:ok, args}
     end
 
+    def child_spec({:args, market_id}) do
+      child_name = :"gestor_bet_market_#{market_id}"
+      %{
+        id: child_name,
+        start: {__MODULE__, :start_link, [market_id]},
+        type: :worker,
+        restart: :permanent,
+        shutdown: 500
+      }
+    end
+
+    def handle_call({:back_bet, user_id, market_id, stake, odds}, _from, state) do
+      case insert_bet(user_id, market_id, stake, odds, "back") do
+        {:ok, bet} ->
+          child_name = :"bet_#{bet.id}"
+          child_spec = Betunfair.Bet.OperationsBet.child_spec({:args, bet.id, child_name})
+          process_name = :"supervisor_bet_market_#{market_id}"
+          case Supervisor.start_child(process_name, child_spec) do
+            {:ok, _pid} ->
+              {:reply, {:ok, bet.id}, state}
+            {:error, reason} ->
+              {:reply, {:error, reason}, state}
+          end
+        {:error, reason} ->
+          {:reply, {:error, reason}, state}
+      end
+    end
+
+    #@spec bet_back(user_id :: user_id(), market_id :: market_id(), stake :: integer(), odds :: integer()) :: {:ok, bet_id()}
     def bet_back(user_id, market_id, stake, odds) do
-      #You manage the operations for creating a bet back.
+      process_name = :"gestor_bet_market_#{market_id}"
+      GenServer.call(process_name, {:back_bet, user_id, market_id, stake, odds})
     end
 
     def bet_lay(user_id, market_id, stake, odds) do
@@ -112,18 +143,60 @@ defmodule Betunfair.Bet do
     end
 
     #You manage the operations for creating OperationsBet processes. They are created when a bet is created.
-
+    def insert_bet(user_id, market_id, stake, odds, type) do
+      #validating input
+      case Betunfair.Repo.get(Betunfair.User, user_id) do
+        nil ->
+          {:error, "user with id #{user_id} doesn't exist"}
+        user ->
+          if stake > user.balance do
+             {:error, "Insufficient balance for user with id #{user_id}: stake #{stake}$ is greater than user's balance #{user.balance}$"}
+          else
+            case Betunfair.Repo.get(Betunfair.Market, market_id) do
+              nil ->
+                {:error, "user with id #{user_id} doesn't exist"}
+              _market ->
+                changeset = Betunfair.User.changeset(user, %{balance: user.balance - stake})
+                case Betunfair.Repo.update(changeset) do
+                  {:ok, user} ->
+                    IO.puts("updated user #{user_id} balance due to new inserted bet")
+                    {:ok, user}
+                  {:error, changeset} ->
+                    {:error, "Couldn't modify user balance for user #{user_id}: #{inspect(changeset.errors)}"}
+                  end
+                changeset = Betunfair.Bet.changeset(%Betunfair.Bet{}, %{user_id: user_id, market_id: market_id, original_stake: stake, remaining_stake: stake, odds: odds, type: type})
+                case Betunfair.Repo.insert(changeset) do
+                  {:ok, bet} ->
+                    {:ok, bet}
+                  {:error, changeset} ->
+                    {:error, "Couldn't create the bet for user #{user_id}: #{inspect(changeset.errors)}"}
+                end
+              end
+          end
+        end
+    end
   end
 
   defmodule OperationsBet do
     use GenServer
 
-    def start_link(args) do
-      #GenServer.start_link(__MODULE__, args, name: args)
+    def start_link(bet_id) do
+      child_name = :"bet_#{bet_id}"
+      GenServer.start_link(__MODULE__, bet_id, name: child_name)
     end
 
     def init(args) do
-      #{:ok, args}
+      {:ok, args}
+    end
+
+    def child_spec({:args, bet_id, child_name}) do
+      %{
+        id: child_name,
+        start: {__MODULE__, :start_link, [bet_id]},
+        type: :worker,
+        restart: :permanent,
+        shutdown: 500
+      }
     end
 
     def bet_get(id) do
