@@ -8,12 +8,12 @@
     <%= if @markets do %>
       <div class="mb-6">
         <label class="block text-lg font-medium text-gray-200 mb-2">Choose a market:</label>
-        <div class="flex space-x-2">
+        <div class="flex flex-wrap space-x-2">
           <%= for market <- @markets do %>
             <form action="/bets/load_bets" method="POST" class="inline">
               <input type="hidden" name="_csrf_token" value={get_csrf_token()}>
               <input type="hidden" name="market_id" value={market.id}>
-              <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+              <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-2">
                 <%= market.name %> (<%= market.description %>)
               </button>
             </form>
@@ -34,9 +34,17 @@
               <li class="mb-4 bg-gray-900 p-4 rounded-lg shadow-lg text-white">
                 <div class="flex justify-between items-center">
                   <div>
-                    <span class="mr-2">Bet ID: <%= bet.id %></span>
-                    <span class="mr-2">Amount: <%= bet.original_stake %></span>
-                    <span class="mr-2">Odds: <%= bet.odds %></span>
+                    <span class="block text-white">Amount: <strong>$<%= bet.original_stake %></strong></span>
+                    <span class="block text-white">Odds: <strong><%= bet.odds %></strong></span>
+                  </div>
+                  <div>
+                    <form action="/bets/back_bet" method="POST" class="inline">
+                      <input type="hidden" name="_csrf_token" value={get_csrf_token()}>
+                      <input type="hidden" name="bet_id" value={bet.id}>
+                      <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                        Back
+                      </button>
+                    </form>
                   </div>
                 </div>
               </li>
@@ -54,9 +62,17 @@
               <li class="mb-4 bg-gray-900 p-4 rounded-lg shadow-lg text-white">
                 <div class="flex justify-between items-center">
                   <div>
-                    <span class="mr-2">Bet ID: <%= bet.id %></span>
-                    <span class="mr-2">Amount: <%= bet.original_stake %></span>
-                    <span class="mr-2">Odds: <%= bet.odds %></span>
+                    <span class="block text-white">Amount: <strong>$<%= bet.original_stake %></strong></span>
+                    <span class="block text-white">Odds: <strong><%= bet.odds %></strong></span>
+                  </div>
+                  <div>
+                    <form action="/bets/lay_bet" method="POST" class="inline">
+                      <input type="hidden" name="_csrf_token" value={get_csrf_token()}>
+                      <input type="hidden" name="bet_id" value={bet.id}>
+                      <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                        Lay
+                      </button>
+                    </form>
                   </div>
                 </div>
               </li>
