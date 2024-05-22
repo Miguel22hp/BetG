@@ -196,6 +196,7 @@ defmodule Betunfair.Bet do
   end
 
   defmodule OperationsBet do
+    alias Betunfair.Bet
     use GenServer
 
     def start_link(bet_id) do
@@ -251,8 +252,51 @@ defmodule Betunfair.Bet do
       end
     end
 
+    def handle_call({:bet_cancel, bet_id}, _from, state) do
+      case Betunfair.Repo.get(Betunfair.Bet, bet_id) do
+        nil ->
+          {:error, "Could not find the bet with id #{bet_id}", state}
+        bet ->
+          case Betunfair.Repo.get(Betunfair.User, bet.user_id) do
+            nil ->
+              {:error, "Could not find the user #{bet.user_id} with bet #{bet.id}"}
+            user ->
+              changeset = Betunfair.User.changeset(user, %{balance: user.balance + bet.remaining_stake})
+              IO.puts("user obtained #{bet.remaining_stake}$ from cancelling bet #{bet_id}")
+              case Betunfair.Repo.update(changeset) do
+                {:error, changeset} ->
+                  {:error, "Could not update the bet with id #{bet_id}; #{inspect(changeset.errors)}", state}
+                _ ->
+                  changeset = Betunfair.Bet.changeset(bet, %{remaining_stake: 0})
+                  case Betunfair.Repo.update(changeset) do
+                    {:ok, bet} ->
+                      IO.puts("Bet updated successfully: #{inspect(bet)}")
+                      #TODO: end the bet process because it has been cancelled?
+                      #pid = Process.whereis(:"bet_#{bet_id}")
+                      #Process.exit(pid, :normal)
+                      {:reply, {:ok, bet}, state}
+                    {:error, changeset} ->
+                      {:error, "Could not update the bet with id #{bet_id}; #{inspect(changeset.errors)}", state}
+                  end
+              end
+          end
+        end
+    end
+
+    #@spec bet_cancel(id :: bet_id()):: :ok
     def bet_cancel(id) do
       #cancels the parts of a bet that has not been matched yet (remaining_stake).
+      case Betunfair.Repo.get(Betunfair.Bet, id) do
+        nil ->
+          {:error, "Could not find the bet with id #{id}"}
+        _bet ->
+          case GenServer.call(:"bet_#{id}", {:bet_cancel, id}) do
+            {:ok, _bets} ->
+              {:ok}
+            {:error, reason} ->
+              {:error, reason}
+          end
+        end
     end
 
     # You manage the operations that can be done in a bet.
