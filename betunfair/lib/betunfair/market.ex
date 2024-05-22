@@ -185,6 +185,7 @@ defmodule Betunfair.Market do
   defmodule OperationsMarket do
     use GenServer
     import Ecto.Query, only: [from: 2]
+    require Logger
     alias Betunfair.Repo
 
     def child_spec({:args, child_name, market_id}) do
