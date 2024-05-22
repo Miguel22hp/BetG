@@ -23,17 +23,18 @@ defmodule Betunfair.Matched do
 
   defmodule SupervisorMatched do
     use Supervisor
-    def start_link() do
+    def start_link(_) do
       Supervisor.start_link(__MODULE__, [], name: :matched_supervisor)
     end
 
     def init(_) do
       children = [
-        {Betunfair.Matched.OperationsMatched, []}
+        {Betunfair.Matched.GestorMatched, []}
       ]
-      state = Supervisor.init(children, strategy: :one_for_one)
-      Task.start(fn -> load_matched() end)
-      state
+      IO.puts("Matched supervisor started ")
+      Supervisor.init(children, strategy: :one_for_one)
+      #Task.start(fn -> load_matched() end)
+
     end
 
     def load_matched() do
@@ -45,7 +46,7 @@ defmodule Betunfair.Matched do
     end
 
     def createProcessMatched(match) do
-      child_name = :"match#{match.id}"
+      child_name = :"match_#{match.id}"
       IO.puts("Creando proceso #{child_name}")
       if Process.whereis(child_name) == nil do
         IO.puts("Dentro del if #{child_name}")
@@ -54,19 +55,34 @@ defmodule Betunfair.Matched do
     end
   end
 
-  # defmodule GestorMatched do
-  #   use GenServer
+  defmodule GestorMatched do
+    use GenServer
 
-  #   def start_link([]) do
-  #     GenServer.start_link(__MODULE__, [], name: :matched_gestor)
-  #   end
+    def start_link([]) do
+      GenServer.start_link(__MODULE__, [], name: :matched_gestor)
+    end
 
-  #   def init(args) do
-  #     IO.puts("Matchaming gestor started")
-  #     {:ok, args}
-  #   end
+    def init(args) do
+      IO.puts("Matchaming gestor started")
+      {:ok, args}
+    end
 
-  # end
+    def handle_call({:add_child_operation, market_id}, _from, state) do
+      child_name = :"match_#{market_id}"
+      child_spec = Betunfair.Matched.OperationsMatched.child_spec({:args, child_name, market_id})
+      case Supervisor.start_child(:matched_supervisor, child_spec) do
+        {:ok, _pid} ->
+          {:reply, {:ok}, state}
+        {:error, reason} ->
+          {:reply, {:error, reason, "ERROR AL CREAR EL HIJO"}, state}
+      end
+    end
+
+    def add_child_operation( market_id) do
+      GenServer.call(:matched_gestor, {:add_child_operation, market_id})
+    end
+
+  end
 
   defmodule OperationsMatched do
     alias Betunfair.{Bet, Matched}
@@ -84,7 +100,7 @@ defmodule Betunfair.Matched do
     end
 
     def start_link(match_id) do
-      child_name = :"market_#{match_id}" # nombre del hijo
+      child_name = :"match_#{match_id}" # nombre del hijo
       GenServer.start_link(__MODULE__, match_id, name: child_name)
     end
 
