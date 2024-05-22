@@ -3,12 +3,13 @@ defmodule Betunfair.Bet do
   import Ecto.Changeset
 
   schema "bets" do
-    field :odds, :integer
+    field :odds, :integer #TODO: this (and in Ecto) should be a float
     field :original_stake, :integer
     field :remaining_stake, :integer
     field :type, :string
-    field :user_id, :id
-    field :market_id, :id
+    #adding the user_id and market_id as a FK on Ecto Schema
+    belongs_to :user, Betunfair.User
+    belongs_to :market, Betunfair.Market
 
     timestamps(type: :utc_datetime)
   end
@@ -140,7 +141,9 @@ defmodule Betunfair.Bet do
   @doc false
   def changeset(bet, attrs) do
     bet
-    |> cast(attrs, [:odds, :type, :original_stake, :remaining_stake])
-    |> validate_required([:odds, :type, :original_stake, :remaining_stake])
+    |> cast(attrs, [:user_id, :market_id, :odds, :type, :original_stake, :remaining_stake])
+    |> validate_required([:user_id, :market_id, :odds, :type, :original_stake, :remaining_stake])
+    |> assoc_constraint(:user)
+    |> assoc_constraint(:market)
   end
 end
