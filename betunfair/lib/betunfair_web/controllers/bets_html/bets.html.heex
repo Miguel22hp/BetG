@@ -34,6 +34,7 @@
               <li class="mb-4 bg-gray-900 p-4 rounded-lg shadow-lg text-white">
                 <div class="flex justify-between items-center">
                   <div>
+                    <span class="block text-white font-semibold">Bet ID: <%= bet.id %></span>
                     <span class="block text-white">Amount: <strong>$<%= bet.original_stake %></strong></span>
                     <span class="block text-white">Odds: <strong><%= bet.odds %></strong></span>
                   </div>
@@ -41,6 +42,10 @@
                     <form action="/bets/back_bet" method="POST" class="inline">
                       <input type="hidden" name="_csrf_token" value={get_csrf_token()}>
                       <input type="hidden" name="bet_id" value={bet.id}>
+                      <input type="hidden" name="market_id" value={bet.market_id}>
+                      <input type="hidden" name="user_id" value={bet.user_id}>
+                      <input type="hidden" name="stake" value={bet.original_stake}>
+                      <input type="hidden" name="odds" value={bet.odds}>
                       <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
                         Back
                       </button>
@@ -62,6 +67,7 @@
               <li class="mb-4 bg-gray-900 p-4 rounded-lg shadow-lg text-white">
                 <div class="flex justify-between items-center">
                   <div>
+                    <span class="block text-white font-semibold">Bet ID: <%= bet.id %></span>
                     <span class="block text-white">Amount: <strong>$<%= bet.original_stake %></strong></span>
                     <span class="block text-white">Odds: <strong><%= bet.odds %></strong></span>
                   </div>
@@ -69,6 +75,10 @@
                     <form action="/bets/lay_bet" method="POST" class="inline">
                       <input type="hidden" name="_csrf_token" value={get_csrf_token()}>
                       <input type="hidden" name="bet_id" value={bet.id}>
+                      <input type="hidden" name="market_id" value={bet.market_id}>
+                      <input type="hidden" name="user_id" value={bet.user_id}>
+                      <input type="hidden" name="stake" value={bet.original_stake}>
+                      <input type="hidden" name="odds" value={bet.odds}>
                       <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
                         Lay
                       </button>

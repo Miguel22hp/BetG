@@ -3,6 +3,7 @@ defmodule BetunfairWeb.BetsController do
   alias Betunfair.Market.GestorMarket
   alias Betunfair.Market.OperationsMarket
   alias Betunfair.Bet.OperationsBet
+  alias Betunfair.Bet.GestorMarketBet
 
   def bets(conn, _params) do
     case GestorMarket.market_list() do
@@ -67,6 +68,44 @@ defmodule BetunfairWeb.BetsController do
 
       {:error, _reason} ->
         render(conn, "bets.html", error: "Unable to load back bets.")
+    end
+  end
+
+  def back_bet(conn, %{"bet_id" => bet_id, "market_id" => market_id, "user_id" => user_id, "stake" => stake, "odds" => odds}) do
+    market_id = String.to_integer(market_id)
+    user_id = String.to_integer(user_id)
+    bet_id = String.to_integer(bet_id)
+    stake = String.to_integer(stake)
+    odds = String.to_float(odds)
+
+    case GestorMarketBet.bet_back(user_id, market_id, stake, odds) do
+      {:ok, _bet_id} ->
+        conn
+        |> put_flash(:info, "Back bet placed successfully.")
+        |> redirect(to: "/bets")
+      {:error, reason} ->
+        conn
+        |> put_flash(:error, "Failed to place back bet: #{reason}")
+        |> redirect(to: "/bets")
+    end
+  end
+
+  def lay_bet(conn, %{"bet_id" => bet_id, "market_id" => market_id, "user_id" => user_id, "stake" => stake, "odds" => odds}) do
+    market_id = String.to_integer(market_id)
+    user_id = String.to_integer(user_id)
+    bet_id = String.to_integer(bet_id)
+    stake = String.to_integer(stake)
+    odds = String.to_float(odds)
+
+    case GestorMarketBet.bet_lay(user_id, market_id, stake, odds) do
+      {:ok, _bet_id} ->
+        conn
+        |> put_flash(:info, "Lay bet placed successfully.")
+        |> redirect(to: "/bets")
+      {:error, reason} ->
+        conn
+        |> put_flash(:error, "Failed to place lay bet: #{reason}")
+        |> redirect(to: "/bets")
     end
   end
 end
