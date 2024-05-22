@@ -3,9 +3,9 @@ defmodule Betunfair.Bet do
   import Ecto.Changeset
 
   schema "bets" do
-    field :odds, :integer
-    field :original_stake, :integer
-    field :remaining_stake, :integer
+    field :odds, :float
+    field :original_stake, :float
+    field :remaining_stake, :float
     field :type, :string
     field :user_id, :id
     field :market_id, :id
@@ -73,7 +73,6 @@ defmodule Betunfair.Bet do
         shutdown: 500
       }
     end
-
 
     def start_link(market_id) do
       child_name = :"supervisor_bet_market_#{market_id}"
