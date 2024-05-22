@@ -116,8 +116,8 @@ defmodule Betunfair.Matched do
 
     # Step 1: Fetch pending back and lay bets for the specific market
     def match_bets(market_id) do
-      back_bets = fetch_pending_back_bets(market_id)
-      lay_bets = fetch_pending_lay_bets(market_id)
+      back_bets = fetch_pending_back_bets(market_id) # Obtains all the back bets
+      lay_bets = fetch_pending_lay_bets(market_id) # Obtains all the lay bets
       #IO.inspect(length(back_bets))
       #IO.inspect(length(lay_bets))
       match_bets_loop(back_bets, lay_bets)
@@ -128,6 +128,8 @@ defmodule Betunfair.Matched do
     def match_bets_loop(_, []), do: :ok
 
     def match_bets_loop([back_bet | rest_back_bets], [lay_bet | rest_lay_bets]) do
+      # Show the bets that are being matched
+      IO.puts("Trie: Matching back bet: odds #{back_bet.odds}, remaining stake #{back_bet.remaining_stake}, lay bet: odds #{lay_bet.odds}, remaining stake #{lay_bet.remaining_stake}")
       if potential_match?(back_bet, lay_bet) do
         IO.puts("Matched back bet: odds #{back_bet.odds}, remaining stake #{back_bet.remaining_stake}, lay bet: odds #{lay_bet.odds}, remaining stake #{lay_bet.remaining_stake}")
         {matched_amount, new_back_stake, new_lay_stake} = calculate_matched_amount(back_bet, lay_bet)

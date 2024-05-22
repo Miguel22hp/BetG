@@ -320,7 +320,18 @@ defmodule Betunfair.Market do
     end
 
     def market_match(market_id) do
-
+      case Betunfair.Repo.get(Betunfair.Market, market_id) do
+        nil ->
+          {:error, "No se encontró el market"}
+        market ->
+          IO.puts("Market Match Comienza")
+          case GenServer.call(:"match_#{market_id}", {:market_match, market_id}) do
+            {:ok} ->
+              :ok
+            {:error, reason} ->
+              {:error, reason}
+          end
+      end
     end
 
     def market_pending_backs(market_id) do
