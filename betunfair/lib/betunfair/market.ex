@@ -227,36 +227,20 @@ defmodule Betunfair.Market do
     end
 
     def handle_call({:market_pending_backs, market_id}, _from, state) do
-      # All back bets from market_id
-      query = from b in Betunfair.Bet, where: b.market_id == ^market_id and b.type == "back"
+      # All back bets from market_id with remaining_stake > 0
+      query = from b in Betunfair.Bet, where: b.market_id == ^market_id and b.type == "back" and b.remaining_stake > 0.0, order_by: [asc: :odds]
       bets = Betunfair.Repo.all(query)
-      # recorrer bets entero y comprobar si existe su id en matched
-      result = Enum.filter(bets, &get_unmatched_bets(&1.id, 0))
-      {:reply, {:ok, result}, state}
+
+
+      {:reply, {:ok, bets}, state}
     end
 
 
     def handle_call({:market_pending_lays, market_id}, _from, state) do
-      query = from b in Betunfair.Bet, where: b.market_id == ^market_id and b.type == "lay"
+      # All lay bets from market_id with remaining_stake > 0
+      query = from b in Betunfair.Bet, where: b.market_id == ^market_id and b.type == "lay" and b.remaining_stake > 0.0, order_by: [desc: :odds]
       bets = Betunfair.Repo.all(query)
-      # recorrer bets entero y comprobar si existe su id en matched
-      result = Enum.filter(bets, &get_unmatched_bets(&1.id, 1))
-      {:reply, {:ok, result}, state}
-    end
-
-
-    defp get_unmatched_bets(bet_id, int) do
-      if(int == 0) do ## back
-        query = from m in Matched,
-                where: m.id_bet_backed == ^bet_id ,
-                select: m.id
-        Repo.all(query) == []
-      else #lay
-        query = from m in Matched,
-                where: m.id_bet_layed == ^bet_id ,
-                select: m.id
-        Repo.all(query) == []
-      end
+      {:reply, {:ok, bets}, state}
     end
 
     def market_cancel(market_id) do
