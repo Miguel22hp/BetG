@@ -4,26 +4,7 @@
       <h1 class="text-xl font-bold">Bets:</h1>
     </div>
   </header>
-  <section class="px-4 sm:px-6 lg:px-8 py-4">
-    <%= if @markets do %>
-      <div class="mb-6">
-        <label class="block text-lg font-medium text-gray-200 mb-2">Choose a market:</label>
-        <div class="flex flex-wrap space-x-2">
-          <%= for market <- @markets do %>
-            <form action="/bets/load_bets" method="POST" class="inline">
-              <input type="hidden" name="_csrf_token" value={get_csrf_token()}>
-              <input type="hidden" name="market_id" value={market.id}>
-              <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-2">
-                <%= market.name %> (<%= market.description %>)
-              </button>
-            </form>
-          <% end %>
-        </div>
-      </div>
-    <% else %>
-      <p class="text-red-500">No markets found</p>
-    <% end %>
-  </section>
+  
   <div class="flex flex-1 overflow-auto">
     <section class="w-1/2 p-4" id="back-bets-section">
       <div class="flex flex-col items-center">
