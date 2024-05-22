@@ -3,10 +3,10 @@ defmodule Betunfair.Repo.Migrations.CreateBets do
 
   def change do
     create table(:bets) do
-      add :odds, :integer
+      add :odds, :float
       add :type, :string
-      add :original_stake, :integer
-      add :remaining_stake, :integer
+      add :original_stake, :float
+      add :remaining_stake, :float
       add :user_id, references(:users, on_delete: :nothing)
       add :market_id, references(:markets, on_delete: :nothing)
 

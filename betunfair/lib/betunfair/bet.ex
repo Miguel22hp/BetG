@@ -3,9 +3,9 @@ defmodule Betunfair.Bet do
   import Ecto.Changeset
 
   schema "bets" do
-    field :odds, :integer #TODO: this (and in Ecto) should be a float
-    field :original_stake, :integer
-    field :remaining_stake, :integer
+    field :odds, :float
+    field :original_stake, :float
+    field :remaining_stake, :float
     field :type, :string
     #adding the user_id and market_id as a FK on Ecto Schema
     belongs_to :user, Betunfair.User
@@ -16,8 +16,8 @@ defmodule Betunfair.Bet do
 
   defmodule SupervisorBet do
     use Supervisor
-
-    def start_link() do
+    
+    def start_link(_) do
       Supervisor.start_link(__MODULE__, [], name: :bet_supervisor)
     end
 
