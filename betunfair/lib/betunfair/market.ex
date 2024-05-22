@@ -282,6 +282,42 @@ defmodule Betunfair.Market do
 
     end
 
+    def handle_call({:market_freeze, market_id, market}, _from, state) do
+      if market.status != "active" do
+        {:reply, {:error, "El mercado no está activo"}, state}
+      else
+        changeset = Betunfair.Market.changeset(market, %{status: "frozen"})
+        case Betunfair.Repo.update(changeset) do
+          {:ok, _market} ->
+            # Get all bets whose market_id is market_id and send the original_stake to the user
+            query = from b in Betunfair.Bet, where: b.market_id == ^market_id and b.remaining_stake > 0.0
+            bets = Betunfair.Repo.all(query)
+            results = for bet <- bets do
+              # Obtain the remaing stake and the user_id
+              remaining_stake = trunc(bet.remaining_stake) #TODO: esto esta mal, lo trunco de momento, pero debería ser un float el balance de users
+              user_id = bet.user_id
+
+              # Do a deposit to the user with the original stake
+              case Betunfair.User.OperationsUser.user_deposit(user_id, remaining_stake) do
+                :ok ->
+                  IO.puts("Depósito realizado con éxito")
+                  {:ok}
+                {:error, reason} ->
+                  IO.puts("Error al realizar el depósito")
+                  {:error, reason}
+              end
+            end
+            if Enum.all?(results, &match?({:ok}, &1)) do
+              {:reply, :ok, state}
+            else
+              {:reply, {:error, "Some deposits failed"}, state}
+            end
+          {:error, changeset} ->
+            {:reply, {:error, "No se pudo cancelar el mercado"}, state}
+        end
+      end
+    end
+
     def market_cancel(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
@@ -297,7 +333,17 @@ defmodule Betunfair.Market do
     end
 
     def market_freeze(market_id) do
-
+      case Betunfair.Repo.get(Betunfair.Market, market_id) do
+        nil ->
+          {:error, "No se encontró el market"}
+        market ->
+          case GenServer.call(:"market_#{market_id}", {:market_freeze, market_id, market}) do
+            :ok ->
+              :ok
+            {:error, reason} ->
+              {:error, reason}
+          end
+      end
     end
 
     def market_settle(market_id, result) do
