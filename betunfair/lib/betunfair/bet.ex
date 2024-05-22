@@ -75,7 +75,6 @@ defmodule Betunfair.Bet do
       }
     end
 
-
     def start_link(market_id) do
       child_name = :"supervisor_bet_market_#{market_id}"
       Supervisor.start_link(__MODULE__, market_id, name: child_name)
@@ -138,8 +137,27 @@ defmodule Betunfair.Bet do
       GenServer.call(process_name, {:back_bet, user_id, market_id, stake, odds})
     end
 
+    def handle_call({:lay_bet, user_id, market_id, stake, odds}, _from, state) do
+      case insert_bet(user_id, market_id, stake, odds, "lay") do
+        {:ok, bet} ->
+          child_name = :"bet_#{bet.id}"
+          child_spec = Betunfair.Bet.OperationsBet.child_spec({:args, bet.id, child_name})
+          process_name = :"supervisor_bet_market_#{market_id}"
+          case Supervisor.start_child(process_name, child_spec) do
+            {:ok, _pid} ->
+              {:reply, {:ok, bet.id}, state}
+            {:error, reason} ->
+              {:reply, {:error, reason}, state}
+          end
+        {:error, reason} ->
+          {:reply, {:error, reason}, state}
+      end
+    end
+
+    #@spec bet_lay(user_id :: user_id(), market_id :: market_id(), stake :: integer(), odds :: integer()) :: {:ok, bet_id()}
     def bet_lay(user_id, market_id, stake, odds) do
-      #You manage the operations for creating a bet lay.
+      process_name = :"gestor_bet_market_#{market_id}"
+      GenServer.call(process_name, {:lay_bet, user_id, market_id, stake, odds})
     end
 
     #You manage the operations for creating OperationsBet processes. They are created when a bet is created.
