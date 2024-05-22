@@ -1,111 +1,65 @@
 defmodule BetunfairWeb.BetsController do
   use BetunfairWeb, :controller
-  alias Betunfair.Market.GestorMarket
   alias Betunfair.Market.OperationsMarket
   alias Betunfair.Bet.OperationsBet
   alias Betunfair.Bet.GestorMarketBet
+  require Logger
 
-  def bets(conn, _params) do
-    case GestorMarket.market_list() do
-      {:ok, market_ids} ->
-        markets = for market_id <- market_ids do
-          case OperationsMarket.market_get(market_id) do
-            {:ok, market} ->
-              %{id: market_id, name: market.name, description: market.description, status: market.status}
-            {:error, _reason} -> nil
-          end
-        end
-        |> Enum.filter(& &1) # Filtramos los mercados nulos
-
-        render(conn, "bets.html", markets: markets, selected_market: nil, back_bets: [], lay_bets: [])
-      {:error, reason} ->
-        render(conn, "bets.html", markets: [], error: reason)
-    end
-  end
-
-  def load_bets(conn, %{"market_id" => market_id}) do
-    market_id = String.to_integer(market_id)
-
-    case OperationsMarket.market_pending_backs(market_id) do
-      {:ok, back_bet_tuples} ->
-        back_bets = for {odds, bet_id} <- back_bet_tuples do
-          case OperationsBet.bet_get(bet_id) do
-            {:ok, bet} -> Map.put(bet, :id, bet_id)
-            {:error, _reason} -> nil
-          end
-        end
-        |> Enum.filter(& &1) # Filtramos las apuestas nulas
-
-        case OperationsMarket.market_pending_lays(market_id) do
-          {:ok, lay_bet_tuples} ->
-            lay_bets = for {odds, bet_id} <- lay_bet_tuples do
+  def bets(conn, %{"id" => market_id}) do
+    case OperationsMarket.market_get(market_id) do
+      {:ok, market} ->
+        case OperationsMarket.market_bets(market_id) do
+          {:ok, bet_ids} ->
+            bets = Enum.map(bet_ids, fn bet_id ->
               case OperationsBet.bet_get(bet_id) do
-                {:ok, bet} -> Map.put(bet, :id, bet_id)
-                {:error, _reason} -> nil
+                {:ok, bet} -> bet
+                _ -> nil
               end
-            end
-            |> Enum.filter(& &1) # Filtramos las apuestas nulas
+            end)
+            |> Enum.reject(&is_nil/1)
 
-            case GestorMarket.market_list() do
-              {:ok, market_ids} ->
-                markets = for market_id <- market_ids do
-                  case OperationsMarket.market_get(market_id) do
-                    {:ok, market} ->
-                      %{id: market_id, name: market.name, description: market.description, status: market.status}
-                    {:error, _reason} -> nil
-                  end
-                end
-                |> Enum.filter(& &1) # Filtramos los mercados nulos
+            render(conn, :bets,
+              market_id: market_id,
+              market: market,
+              bets: bets,
+              csrf_token: Plug.CSRFProtection.get_csrf_token()
+            )
 
-                render(conn, "bets.html", markets: markets, selected_market: market_id, back_bets: back_bets, lay_bets: lay_bets)
-              {:error, reason} ->
-                render(conn, "bets.html", markets: [], error: reason)
-            end
-
-          {:error, _reason} ->
-            render(conn, "bets.html", error: "Unable to load lay bets.")
+          {:error, reason} ->
+            Logger.error("Failed to load bets: #{reason}")
+            conn
+            |> put_flash(:error, "Failed to load bets: #{reason}")
+            |> redirect(to: "/markets")
         end
 
-      {:error, _reason} ->
-        render(conn, "bets.html", error: "Unable to load back bets.")
+      {:error, reason} ->
+        Logger.error("Failed to load market: #{reason}")
+        conn
+        |> put_flash(:error, "Failed to load market: #{reason}")
+        |> redirect(to: "/markets")
     end
   end
 
-  def back_bet(conn, %{"bet_id" => bet_id, "market_id" => market_id, "user_id" => user_id, "stake" => stake, "odds" => odds}) do
-    market_id = String.to_integer(market_id)
-    user_id = String.to_integer(user_id)
-    bet_id = String.to_integer(bet_id)
-    stake = String.to_integer(stake)
+  def create_bet(conn, %{"market_id" => market_id, "type" => type, "amount" => amount, "odds" => odds, "user_id" => user_id}) do
+    amount = String.to_float(amount)
     odds = String.to_float(odds)
 
-    case GestorMarketBet.bet_back(user_id, market_id, stake, odds) do
+    result =
+      case type do
+        "lay" -> GestorMarketBet.bet_lay(user_id, market_id, amount, odds)
+        "back" -> GestorMarketBet.bet_back(user_id, market_id, amount, odds)
+      end
+
+    case result do
       {:ok, _bet_id} ->
         conn
-        |> put_flash(:info, "Back bet placed successfully.")
-        |> redirect(to: "/bets")
+        |> put_flash(:info, "Bet successfully created.")
+        |> redirect(to: "/markets")
+
       {:error, reason} ->
         conn
-        |> put_flash(:error, "Failed to place back bet: #{reason}")
-        |> redirect(to: "/bets")
-    end
-  end
-
-  def lay_bet(conn, %{"bet_id" => bet_id, "market_id" => market_id, "user_id" => user_id, "stake" => stake, "odds" => odds}) do
-    market_id = String.to_integer(market_id)
-    user_id = String.to_integer(user_id)
-    bet_id = String.to_integer(bet_id)
-    stake = String.to_integer(stake)
-    odds = String.to_float(odds)
-
-    case GestorMarketBet.bet_lay(user_id, market_id, stake, odds) do
-      {:ok, _bet_id} ->
-        conn
-        |> put_flash(:info, "Lay bet placed successfully.")
-        |> redirect(to: "/bets")
-      {:error, reason} ->
-        conn
-        |> put_flash(:error, "Failed to place lay bet: #{reason}")
-        |> redirect(to: "/bets")
+        |> put_flash(:error, "Failed to create bet: #{reason}")
+        |> redirect(to: "/markets")
     end
   end
 end

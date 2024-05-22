@@ -25,10 +25,8 @@ defmodule BetunfairWeb.Router do
 
     get "/markets", MarketsController, :list_markets
 
-    get "/bets", BetsController, :bets
-    post "/bets/load_bets", BetsController, :load_bets
-    post "/bets/back_bet", BetsController, :back_bet
-    post "/bets/lay_bet", BetsController, :lay_bet
+    get "/markets/:id/bets", BetsController, :bets
+    post "/bets/create_bet", BetsController, :create_bet
   end
 
   # Other scopes may use custom stacks.
