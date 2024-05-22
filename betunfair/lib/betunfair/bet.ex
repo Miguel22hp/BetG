@@ -217,8 +217,38 @@ defmodule Betunfair.Bet do
       }
     end
 
+    def handle_call({:bet_get, bet_id}, _from, state) do
+      case Betunfair.Repo.get(Betunfair.Bet, bet_id) do
+        nil ->
+          {:error, "Could not find the bet with id #{bet_id}", state}
+        bet ->
+          {:reply, {:ok, bet}, state}
+      end
+    end
+
+    #@spec  bet_get(id :: bet_id()) :: {:ok, %{bet_type: :back | :lay, market_id: market_id(), user_id: user_id(), odds: integer(), original_stake: integer(), remaining_stake: integer(), matched_bets: [bet_id()], status: :active | :cancelled | :market_cancelled {:market_settled, | boolean()}}}
     def bet_get(id) do
-      #You manage the operations for getting a bet.
+      # You manage the operations for getting a bet.
+      case Betunfair.Repo.get(Betunfair.Bet, id) do
+        nil ->
+          {:error, "Could not find the bet with id #{id}"}
+        _bet ->
+          case GenServer.call(:"bet_#{id}", {:bet_get, id}) do
+            {:ok, bet} ->
+              {:ok, %{
+                bet_type: bet.type,
+                market_id: bet.market_id,
+                user_id: bet.user_id,
+                odds: bet.odds,
+                original_stake: bet.original_stake,
+                remaining_stake: bet.remaining_stake,
+                matched_bets: [], # TODO: get_matched_bets() -> pending the matchmaking algo
+                status: nil #TODO: get_bet_status() -> pending the matchmaking algo
+              }}
+            {:error, reason} ->
+              {:error, reason}
+          end
+      end
     end
 
     def bet_cancel(id) do
