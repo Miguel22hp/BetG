@@ -16,6 +16,7 @@ defmodule Betunfair.Bet do
 
   defmodule SupervisorBet do
     use Supervisor
+
     def start_link() do
       Supervisor.start_link(__MODULE__, [], name: :bet_supervisor)
     end
@@ -24,13 +25,38 @@ defmodule Betunfair.Bet do
       children = [
         {Betunfair.Bet.GestorBet, []}
       ]
-      Supervisor.init(children, strategy: :one_for_one)
+      state = Supervisor.init(children, strategy: :one_for_one)
+      Task.start(fn -> load_bets() end) #load every bet from EctoDB as a process
+      state
     end
 
-    # A SupervisorBet creates a SupervisorMarketBet process as a child of him when a market is created.
-    #
-  end
+    # A SupervisorBet creates a SupervisorMarketBet process as a child of him when a market is created. -> ?
 
+    def load_bets() do
+      bets = Betunfair.Repo.all(Betunfair.Bet)
+      for bet <- bets do
+        createProcessBet(bet)
+        Process.sleep(100) # Adds 100 ms delay between process creation sothey do not select the same PID
+      end
+    end
+
+    def createProcessBet(bet) do
+      child_name = :"bet_#{bet.id}"
+      IO.puts("BET: creating process #{child_name}")
+      if Process.whereis(child_name) == nil do
+        child_spec = Betunfair.Bet.OperationsBet.child_spec({:args, bet.id, child_name})
+        IO.puts("Child spec: #{inspect(child_spec)}")
+        case Supervisor.start_child(:bet_supervisor, child_spec) do
+          {:ok, pid} ->
+            IO.puts("Started bet child process with PID #{inspect(pid)}")
+          {:error, reason} ->
+            IO.puts("Failed to start bet child process: #{inspect(reason)}")
+        end
+      else
+        IO.puts("BET: process exists with PID #{Process.whereis(child_name)}")
+      end
+    end
+  end
 
   defmodule GestorBet do
     use GenServer
@@ -87,7 +113,6 @@ defmodule Betunfair.Bet do
       Supervisor.init(children, strategy: :one_for_one)
     end
 
-    # A SupervisorMarketBet creates a OperationsBet process as a child of him when a bet is created.
   end
 
   defmodule GestorMarketBet do
@@ -114,6 +139,7 @@ defmodule Betunfair.Bet do
       }
     end
 
+    #TODO: group handle_calls?
     def handle_call({:back_bet, user_id, market_id, stake, odds}, _from, state) do
       case insert_bet(user_id, market_id, stake, odds, "back") do
         {:ok, bet} ->
@@ -193,6 +219,7 @@ defmodule Betunfair.Bet do
           end
         end
     end
+
   end
 
   defmodule OperationsBet do
@@ -218,6 +245,7 @@ defmodule Betunfair.Bet do
       }
     end
 
+    #TODO: group handle_calls?
     def handle_call({:bet_get, bet_id}, _from, state) do
       case Betunfair.Repo.get(Betunfair.Bet, bet_id) do
         nil ->
@@ -299,8 +327,6 @@ defmodule Betunfair.Bet do
         end
     end
 
-    # You manage the operations that can be done in a bet.
-
   end
 
   @doc false
@@ -311,4 +337,5 @@ defmodule Betunfair.Bet do
     |> assoc_constraint(:user)
     |> assoc_constraint(:market)
   end
+
 end
