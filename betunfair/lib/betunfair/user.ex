@@ -209,6 +209,7 @@ defmodule Betunfair.User do
 
     #--- Client functions ---
     def user_deposit(id, amount) do
+      IO.puts(:"Deposito en user_#{id} de #{amount}")
       case Betunfair.Repo.get(Betunfair.User, id) do
         nil ->
           {:error, "No se encontró el usuario"}
@@ -217,6 +218,7 @@ defmodule Betunfair.User do
             {:ok, new_balance} ->
               :ok
             {:error, reason} ->
+              IO.puts("Error en deposito, la razón es #{reason}")
               {:error, reason}
           end
       end
