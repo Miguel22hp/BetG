@@ -14,7 +14,7 @@ defmodule Betunfair.Market do
 
   defmodule SupervisorMarket do
     use Supervisor
-    def start_link() do
+    def start_link(_) do
       Supervisor.start_link(__MODULE__, [], name: :market_supervisor)
     end
 
