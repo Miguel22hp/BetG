@@ -37,7 +37,7 @@ defmodule BetunfairWeb.ProfileController do
     - If there is an error, redirects to the home page with an error message.
   """
   def add_funds(conn, %{"id" => id, "amount" => amount}) do
-    case OperationsUser.user_deposit(id, String.to_integer(amount)) do
+    case OperationsUser.user_deposit(id, String.to_float(amount)) do
       :ok ->
         Logger.info("Fondos añadidos exitosamente para el usuario #{id}")
         conn
@@ -65,7 +65,7 @@ defmodule BetunfairWeb.ProfileController do
     - If there is an error, redirects to the home page with an error message.
   """
   def withdraw_funds(conn, %{"id" => id, "amount" => amount}) do
-    case OperationsUser.user_withdraw(id, String.to_integer(amount)) do
+    case OperationsUser.user_withdraw(id, String.to_float(amount)) do
       :ok ->
         Logger.info("Fondos retirados exitosamente para el usuario #{id}")
         conn

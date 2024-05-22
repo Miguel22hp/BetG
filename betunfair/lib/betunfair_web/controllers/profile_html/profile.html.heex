@@ -27,13 +27,13 @@
                 <form action="/add_funds" method="POST" class="inline">
                   <input type="hidden" name="_csrf_token" value={@user.csrf_token}>
                   <input type="hidden" name="id" value={@user.id}>
-                  <input type="number" name="amount" placeholder="Amount" class="bg-gray-700 text-white p-2 rounded" min="1">
+                  <input type="number" name="amount" placeholder="Amount" step="0.01" class="bg-gray-700 text-white p-2 rounded" min="1">
                   <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded">Add Funds</button>
                 </form>
                 <form action="/remove_funds" method="POST" class="inline ml-4">
                   <input type="hidden" name="_csrf_token" value={@user.csrf_token}>
                   <input type="hidden" name="id" value={@user.id}>
-                  <input type="number" name="amount" placeholder="Amount" class="bg-gray-700 text-white p-2 rounded" min="1">
+                  <input type="number" name="amount" placeholder="Amount" step="0.01" class="bg-gray-700 text-white p-2 rounded" min="1">
                   <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded">Remove Funds</button>
                 </form>
               </div>
@@ -85,7 +85,7 @@
       <% else %>
         <p class="text-white">No bets found.</p>
         <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded mt-4">
-          <a href="/bets">Place a Bet</a>
+          <a href="/markets">Place a Bet</a>
         </button>
       <% end %>
     </div>

@@ -6,7 +6,7 @@ defmodule Betunfair.User do
 
 
   schema "users" do
-    field :balance, :integer
+    field :balance, :float
     field :id_users, :string
     field :name, :string
 

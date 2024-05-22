@@ -9,40 +9,41 @@
     <section class="bg-gray-800 rounded-lg shadow-lg p-6">
       <h2 class="text-xl font-bold text-white mb-4">Place a Bet</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
         <!-- Lay Bet Form -->
-        <form action="/bets/create_bet" method="POST" class="bg-gray-700 p-4 rounded-lg shadow-lg">
+        <form action="/bets/create_bet" method="POST" class="bg-gray-700 p-6 rounded-lg shadow-lg flex flex-col">
           <input type="hidden" name="_csrf_token" value={@csrf_token}>
           <input type="hidden" name="market_id" value={@market_id}>
           <input type="hidden" name="type" value="lay">
           <input type="hidden" name="user_id" value={1}>
           <div class="mb-4">
-            <label for="lay_amount" class="block text-white">Amount:</label>
+            <label for="lay_amount" class="block text-white mb-2">Amount:</label>
             <input type="number" id="lay_amount" name="amount" step="0.01" min="0" class="bg-gray-600 text-white p-2 rounded w-full" required>
           </div>
           <div class="mb-4">
-            <label for="lay_odds" class="block text-white">Odds:</label>
+            <label for="lay_odds" class="block text-white mb-2">Odds:</label>
             <input type="number" id="lay_odds" name="odds" step="0.01" min="0" class="bg-gray-600 text-white p-2 rounded w-full" required>
           </div>
-          <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+          <button type="submit" class="mt-auto bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
             Place Lay Bet
           </button>
         </form>
 
         <!-- Back Bet Form -->
-        <form action="/bets/create_bet" method="POST" class="bg-gray-700 p-4 rounded-lg shadow-lg">
+        <form action="/bets/create_bet" method="POST" class="bg-gray-700 p-6 rounded-lg shadow-lg flex flex-col">
           <input type="hidden" name="_csrf_token" value={@csrf_token}>
           <input type="hidden" name="market_id" value={@market_id}>
           <input type="hidden" name="type" value="back">
           <input type="hidden" name="user_id" value={1}>
           <div class="mb-4">
-            <label for="back_amount" class="block text-white">Amount:</label>
+            <label for="back_amount" class="block text-white mb-2">Amount:</label>
             <input type="number" id="back_amount" name="amount" step="0.01" min="0" class="bg-gray-600 text-white p-2 rounded w-full" required>
           </div>
           <div class="mb-4">
-            <label for="back_odds" class="block text-white">Odds:</label>
+            <label for="back_odds" class="block text-white mb-2">Odds:</label>
             <input type="number" id="back_odds" name="odds" step="0.01" min="0" class="bg-gray-600 text-white p-2 rounded w-full" required>
           </div>
-          <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+          <button type="submit" class="mt-auto bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
             Place Back Bet
           </button>
         </form>

@@ -1,6 +1,7 @@
 defmodule Betunfair.Bet do
   use Ecto.Schema
   import Ecto.Changeset
+  require Logger
 
   schema "bets" do
     field :odds, :float
@@ -116,6 +117,8 @@ defmodule Betunfair.Bet do
   end
 
   defmodule GestorMarketBet do
+    alias ElixirSense.Log
+    require Logger
     use GenServer
 
     def start_link(market_id) do
@@ -189,6 +192,7 @@ defmodule Betunfair.Bet do
     #You manage the operations for creating OperationsBet processes. They are created when a bet is created.
     def insert_bet(user_id, market_id, stake, odds, type) do
       #validating input
+      Logger.info("Inserting bet for user #{user_id} on market #{market_id} with stake #{stake}$ and odds #{odds}")
       case Betunfair.Repo.get(Betunfair.User, user_id) do
         nil ->
           {:error, "user with id #{user_id} doesn't exist"}
@@ -200,7 +204,9 @@ defmodule Betunfair.Bet do
               nil ->
                 {:error, "market with id #{user_id} doesn't exist"}
               _market ->
+                Logger.info("Creating bet for user #{user_id} on market #{market_id} with stake #{stake}$ and odds #{odds}")
                 changeset = Betunfair.User.changeset(user, %{balance: user.balance - stake})
+                Logger.info(changeset)
                 case Betunfair.Repo.update(changeset) do
                   {:ok, user} ->
                     IO.puts("updated user #{user_id} balance due to new inserted bet")
