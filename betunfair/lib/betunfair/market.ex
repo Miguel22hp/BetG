@@ -318,6 +318,62 @@ defmodule Betunfair.Market do
       end
     end
 
+    def handle_call({:market_settle, market_id, market, result}, _from, state) do
+      if market.status == "cancel" or market.status == "cancel" or market.status == "true" or market.status == "false"do
+        {:reply, {:error, "Market can not settle"}, state}
+      else
+        changeset = Betunfair.Market.changeset(market, %{status: to_string(result)})
+        case Betunfair.Repo.update(changeset) do
+          {:ok, _market} ->
+            # Get all bets whose market_id is market_id and send the original_stake to the user
+            query = from m in Betunfair.Matched, join: b in Betunfair.Bet, on: b.id == m.id_bet_backed, where: b.market_id == ^market_id, select: m
+            matcheds = Betunfair.Repo.all(query)
+
+            results = for match <- matcheds do
+              IO.puts("Matched Empty: #{inspect(match.empty_stake)}")
+              selected_stake =
+                if (result == true and match.empty_stake == "back") or (result == false and match.empty_stake == "lay") do
+                  trunc(match.balance_empty_stake) #TODO: esto esta mal, lo trunco de momento, pero debería ser un float el balance de users
+                else
+                  trunc(match.balance_remain_stake) #TODO: esto esta mal, lo trunco de momento, pero debería ser un float el balance de users
+              end
+
+              bet =
+                if result == true do
+                  #user_id = match.id_bet_layed
+                  query2 = from b in Betunfair.Bet, where: b.id == ^match.id_bet_backed
+                  Betunfair.Repo.one(query2)
+                else
+                  query2 = from b in Betunfair.Bet, where: b.id == ^match.id_bet_layed
+                  Betunfair.Repo.one(query2)
+                end
+
+              # Do a deposit to the user with the original stake
+              case Betunfair.User.OperationsUser.user_deposit(bet.user_id, selected_stake) do
+                :ok ->
+                  IO.puts("Depósito realizado con éxito")
+                  {:ok}
+                {:error, reason} ->
+                  IO.puts("Error al realizar el depósito")
+                  {:error, reason}
+              end
+            end
+            if Enum.all?(results, &match?({:ok}, &1)) do
+              {:reply, :ok, state}
+            else
+              {:reply, {:error, "Some deposits failed"}, state}
+            end
+          {:error, changeset} ->
+            {:reply, {:error, "No se pudo cancelar el mercado"}, state}
+        end
+      end
+      #Obtengo todos los match del market. Para ello, consigo la lista de bets matcheadas y veo su market_id
+
+
+
+
+    end
+
     def market_cancel(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
@@ -347,7 +403,17 @@ defmodule Betunfair.Market do
     end
 
     def market_settle(market_id, result) do
-
+      case Betunfair.Repo.get(Betunfair.Market, market_id) do
+        nil ->
+          {:error, "No se encontró el market"}
+        market ->
+          case GenServer.call(:"market_#{market_id}", {:market_settle, market_id, market, result}) do
+            :ok ->
+              :ok
+            {:error, reason} ->
+              {:error, reason}
+          end
+      end
     end
 
     def market_bets(market_id) do
@@ -388,7 +454,7 @@ defmodule Betunfair.Market do
                   {:ok, %{
                     name: market.name,
                     description: market.description,
-                    status: market.status
+                    status: String.to_atom(market.status)
                   }}
                 end
               end
