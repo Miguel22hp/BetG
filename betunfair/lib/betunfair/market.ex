@@ -3,6 +3,7 @@ defmodule Betunfair.Market do
   import Ecto.Changeset
   alias Betunfair.Matched
   alias Betunfair.Bet
+  require Logger
 
   schema "markets" do
     field :description, :string
@@ -58,6 +59,7 @@ defmodule Betunfair.Market do
   end
 
   defmodule GestorMarket do
+    require Logger
     use GenServer
 
     def start_link([]) do
