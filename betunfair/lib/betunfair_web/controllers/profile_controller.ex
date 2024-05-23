@@ -1,10 +1,11 @@
 defmodule BetunfairWeb.ProfileController do
   @moduledoc """
-  The `BetunfairWeb.ProfileController` module handles actions related to the user's profile in the Betunfair web application. This module uses `BetunfairWeb`, an alias of the web application context, and provides the following functionalities:
+  The `BetunfairWeb.ProfileController` module handles actions related to the user's profile in the Betunfair web application. This module uses `BetunfairWeb`, an alias of the web application context, and provides the following funcionalidades:
 
   - `profile/2`: Displays the user's profile.
   - `add_funds/2`: Adds funds to the user's account.
   - `withdraw_funds/2`: Withdraws funds from the user's account.
+  - `cancel_bet/2`: Cancels a bet.
   """
   use BetunfairWeb, :controller
   alias Betunfair.User.OperationsUser
@@ -90,6 +91,37 @@ defmodule BetunfairWeb.ProfileController do
     end
   end
 
+  @doc """
+  Cancels a bet by its ID.
+
+  ## Parameters:
+    - `conn`: HTTP connection.
+    - `%{"bet_id" => bet_id, "user_id" => user_id}`: URL parameter containing the bet's ID and user's ID.
+
+  ## Actions:
+    - Calls `OperationsBet.cancel_bet/1` to cancel the bet.
+    - If the operation is successful, redirects to the user's profile with a success message.
+    - If there is an error, redirects to the user's profile with an error message.
+
+  ## Returns:
+    - `Plug.Conn.t()`: The updated connection.
+  """
+  @spec cancel_bet(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def cancel_bet(conn, %{"bet_id" => bet_id, "user_id" => user_id}) do
+    case OperationsBet.bet_cancel(bet_id) do
+      :ok ->
+        Logger.info("Bet cancelled successfully: #{bet_id}")
+        conn
+        |> put_flash(:info, "Bet cancelled successfully.")
+        |> redirect(to: "/users/#{user_id}/profile")
+      {:error, reason} ->
+        Logger.error("Error cancelling bet: #{reason}")
+        conn
+        |> put_flash(:error, reason)
+        |> redirect(to: "/users/#{user_id}/profile")
+    end
+  end
+
   @doc false
   @spec redirect_to_profile(Plug.Conn.t(), String.t(), String.t()) :: Plug.Conn.t()
   defp redirect_to_profile(conn, id, token) do
@@ -102,8 +134,8 @@ defmodule BetunfairWeb.ProfileController do
               case OperationsBet.bet_get(bet_id) do
                 {:ok, bet} ->
                   case OperationsMarket.market_get(bet.market_id) do
-                    {:ok, market} -> Map.put(bet, :market, market)
-                    {:error, _reason} -> bet
+                    {:ok, market} -> Map.put(bet, :market, market) |> Map.put(:bet_id, bet_id)
+                    {:error, _reason} -> bet |> Map.put(:bet_id, bet_id)
                   end
                 {:error, _reason} -> nil
               end

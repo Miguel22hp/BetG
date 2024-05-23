@@ -22,6 +22,7 @@ defmodule BetunfairWeb.Router do
     get "/users/:id/profile", ProfileController, :profile
     post "/add_funds", ProfileController, :add_funds
     post "/remove_funds", ProfileController, :withdraw_funds
+    post "/bets/cancel", ProfileController, :cancel_bet
 
     get "/markets", MarketsController, :list_markets
 
