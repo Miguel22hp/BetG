@@ -1,3 +1,24 @@
+<style>
+  /* Custom scrollbar styles */
+  ::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #2d3748;
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #4a5568;
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #718096;
+  }
+</style>
+
 <section class="w-full min-h-screen bg-black flex flex-col animate-fadeIn">
   <header class="px-4 sm:px-6 lg:px-8 bg-gray-900 text-white py-4">
     <div class="flex justify-between items-center">
@@ -5,7 +26,7 @@
     </div>
   </header>
 
-  <div class="flex flex-1 overflow-auto">
+  <div class="flex overflow-auto">
     <section class="w-full p-4">
       <div class="flex items-center">
         <div class="w-1/4">
@@ -27,13 +48,13 @@
                 <form action="/add_funds" method="POST" class="inline">
                   <input type="hidden" name="_csrf_token" value={@user.csrf_token}>
                   <input type="hidden" name="id" value={@user.id}>
-                  <input type="number" name="amount" placeholder="Amount" step="0.01" class="bg-gray-700 text-white p-2 rounded" min="1">
+                  <input type="number" name="amount" value="20.00" step="0.01" class="bg-gray-700 text-white p-2 rounded" min="1">
                   <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded">Add Funds</button>
                 </form>
                 <form action="/remove_funds" method="POST" class="inline ml-4">
                   <input type="hidden" name="_csrf_token" value={@user.csrf_token}>
                   <input type="hidden" name="id" value={@user.id}>
-                  <input type="number" name="amount" placeholder="Amount" step="0.01" class="bg-gray-700 text-white p-2 rounded" min="1">
+                  <input type="number" name="amount" value="20.00" step="0.01" class="bg-gray-700 text-white p-2 rounded" min="1">
                   <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded">Remove Funds</button>
                 </form>
               </div>
@@ -64,18 +85,6 @@
                       <span class="text-purple-400 font-bold"><%= bet.bet_type %></span>
                     <% _ -> %>
                       <span class="text-gray-400 font-bold"><%= bet.bet_type %></span>
-                  <% end %>
-                </span>
-                <span class="block text-white">Status: 
-                  <%= case bet.status do %>
-                    <% "win" -> %>
-                      <span class="text-green-400 font-bold"><%= bet.status %></span>
-                    <% "lose" -> %>
-                      <span class="text-red-400 font-bold"><%= bet.status %></span>
-                    <% "pending" -> %>
-                      <span class="text-yellow-400 font-bold"><%= bet.status %></span>
-                    <% _ -> %>
-                      <span class="text-gray-400 font-bold"><%= bet.status %></span>
                   <% end %>
                 </span>
               </div>

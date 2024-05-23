@@ -4,6 +4,17 @@ defmodule BetunfairWeb.MarketsController do
   alias Betunfair.Market.OperationsMarket
   require Logger
 
+  @doc """
+  Handles the action to list markets.
+
+  Calls `GestorMarket.market_list/0` to get a list of market IDs.
+  For each market ID, it calls `OperationsMarket.market_get/1` to fetch market data.
+  The markets are filtered into three categories: active, frozen, and cancelled.
+  Renders the "markets.html" template with the categorized market lists and a CSRF token.
+
+  If an error occurs while fetching the market list, logs the error and redirects to the homepage with an error flash message.
+  """
+  @spec list_markets(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def list_markets(conn, _params) do
     case GestorMarket.market_list() do
       {:ok, market_ids} ->
@@ -11,7 +22,7 @@ defmodule BetunfairWeb.MarketsController do
           case OperationsMarket.market_get(id) do
             {:ok, market} ->
               Logger.debug("Fetched market: #{inspect(market)}")
-              Map.put(market, :id, id) # Añade el id al mapa del mercado
+              Map.put(market, :id, id) # Adds the id to the market map
             _ -> nil
           end
         end)

@@ -18,11 +18,11 @@
           <input type="hidden" name="user_id" value={1}>
           <div class="mb-4">
             <label for="lay_amount" class="block text-white mb-2">Amount:</label>
-            <input type="number" id="lay_amount" name="amount" step="0.01" min="0" class="bg-gray-600 text-white p-2 rounded w-full" required>
+            <input type="number" id="lay_amount" name="amount" value="10.00" step="0.01" min="0" class="bg-gray-600 text-white p-2 rounded w-full" required>
           </div>
           <div class="mb-4">
             <label for="lay_odds" class="block text-white mb-2">Odds:</label>
-            <input type="number" id="lay_odds" name="odds" step="0.01" min="0" class="bg-gray-600 text-white p-2 rounded w-full" required>
+            <input type="number" id="lay_odds" name="odds" value="1.00" step="0.01" min="0" class="bg-gray-600 text-white p-2 rounded w-full" required>
           </div>
           <button type="submit" class="mt-auto bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
             Place Lay Bet
@@ -37,11 +37,11 @@
           <input type="hidden" name="user_id" value={1}>
           <div class="mb-4">
             <label for="back_amount" class="block text-white mb-2">Amount:</label>
-            <input type="number" id="back_amount" name="amount" step="0.01" min="0" class="bg-gray-600 text-white p-2 rounded w-full" required>
+            <input type="number" id="back_amount" value="10.00" name="amount" step="0.01" min="0" class="bg-gray-600 text-white p-2 rounded w-full" required>
           </div>
           <div class="mb-4">
             <label for="back_odds" class="block text-white mb-2">Odds:</label>
-            <input type="number" id="back_odds" name="odds" step="0.01" min="0" class="bg-gray-600 text-white p-2 rounded w-full" required>
+            <input type="number" id="back_odds" value="1.00" name="odds" step="0.01" min="0" class="bg-gray-600 text-white p-2 rounded w-full" required>
           </div>
           <button type="submit" class="mt-auto bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
             Place Back Bet

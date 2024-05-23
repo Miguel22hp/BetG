@@ -1,27 +1,16 @@
 <section class="w-full h-screen flex flex-col items-center justify-center transition-all duration-500 ease-in-out" style="background: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), url('https://example.com/background.jpg'); background-size: cover; background-position: center;">
     <div class="text-white text-center p-8 rounded-lg shadow-2xl bg-black transform transition-all duration-500 ease-in-out hover:scale-105">
+        <img src="/images/logo_poker.png" alt="BetUnfair Logo" class="w-24 h-24 mb-6 mx-auto">
         <h1 class="text-5xl font-bold mb-6 transition-all duration-700 ease-in-out hover:text-gray-300">Welcome to BetUnfair</h1>
         <p class="text-xl mb-4 transition-opacity duration-700 ease-linear">
-            Responsible gaming is our priority. Remember, gambling can be addictive.
+            Please login to continue.
         </p>
-        <p class="text-md mb-6 transition-opacity duration-700 ease-linear">
-            BetUnfair allows you to be both a bettor and a bookmaker, with full control over your bets in a dynamic market.
-        </p>
-        <div class="flex gap-4 justify-center mb-6">
-            <p class="text-sm italic bg-gray-900 bg-opacity-80 py-2 px-4 rounded transition-all duration-500 hover:bg-gray-700">
-                Explore the platform and place your bets.
-            </p>
+        <form class="flex flex-col gap-4 justify-center mb-6">
+            <input type="email" placeholder="Email" value="pssisthebestclass@example.com" class="bg-gray-900 bg-opacity-80 py-2 px-4 rounded text-white focus:outline-none focus:ring-2 focus:ring-gray-700 transition-all duration-500" />
+            <input type="password" placeholder="Password" value="password123" class="bg-gray-900 bg-opacity-80 py-2 px-4 rounded text-white focus:outline-none focus:ring-2 focus:ring-gray-700 transition-all duration-500" />
             <a href="/markets" class="bg-green-600 hover:bg-green-800 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-110 shadow-lg">
-                Explore Markets
+                Login
             </a>
-
-            <p class="text-sm italic bg-gray-900 bg-opacity-80 py-2 px-4 rounded transition-all duration-500 hover:bg-gray-700">
-                Manage your profile and track your bets.
-            </p>
-            <a href="/users/1/profile" class="bg-blue-600 hover:bg-blue-800 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-110 shadow-lg">
-                My Profile
-            </a>
-        </div>
+        </form>
     </div>
 </section>
-
