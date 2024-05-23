@@ -8,6 +8,8 @@ defmodule BetunfairWeb.ProfileController do
   """
   use BetunfairWeb, :controller
   alias Betunfair.User.OperationsUser
+  alias Betunfair.Bet.OperationsBet
+  alias Betunfair.Market.OperationsMarket
   require Logger
 
   @doc """
@@ -95,10 +97,14 @@ defmodule BetunfairWeb.ProfileController do
       {:ok, user} ->
         case OperationsUser.user_bets(id) do
           bet_ids ->
-            # Fetch the details of each bet
+            # Fetch the details of each bet along with the market information
             bets = Enum.map(bet_ids, fn bet_id ->
-              case Betunfair.Bet.OperationsBet.bet_get(bet_id) do
-                {:ok, bet} -> bet
+              case OperationsBet.bet_get(bet_id) do
+                {:ok, bet} ->
+                  case OperationsMarket.market_get(bet.market_id) do
+                    {:ok, market} -> Map.put(bet, :market, market)
+                    {:error, _reason} -> bet
+                  end
                 {:error, _reason} -> nil
               end
             end)

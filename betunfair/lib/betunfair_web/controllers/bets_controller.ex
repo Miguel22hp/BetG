@@ -66,8 +66,8 @@ defmodule BetunfairWeb.BetsController do
 
   ## Actions:
     - Calls `GestorMarketBet.bet_lay/4` or `GestorMarketBet.bet_back/4` to create the bet.
-    - If the operation is successful, redirects to the markets page with a success message.
-    - If there is an error, redirects to the markets page with an error message.
+    - If the operation is successful, redirects to the bets page of the specific market with a success message.
+    - If there is an error, redirects to the bets page of the specific market with an error message.
 
   ## Returns:
     - `Plug.Conn.t()`: The updated connection.
@@ -87,12 +87,12 @@ defmodule BetunfairWeb.BetsController do
       {:ok, _bet_id} ->
         conn
         |> put_flash(:info, "Bet successfully created.")
-        |> redirect(to: "/markets")
+        |> redirect(to: "/markets/#{market_id}/view")
 
       {:error, reason} ->
         conn
         |> put_flash(:error, "Failed to create bet: #{reason}")
-        |> redirect(to: "/markets")
+        |> redirect(to: "/markets/#{market_id}/view")
     end
   end
 end
