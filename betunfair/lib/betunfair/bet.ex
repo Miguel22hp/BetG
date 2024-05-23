@@ -7,6 +7,7 @@ defmodule Betunfair.Bet do
     field :original_stake, :float
     field :remaining_stake, :float
     field :type, :string
+    field :status, :string
     #adding the user_id and market_id as a FK on Ecto Schema
     belongs_to :user, Betunfair.User
     belongs_to :market, Betunfair.Market
@@ -208,7 +209,7 @@ defmodule Betunfair.Bet do
                   {:error, changeset} ->
                     {:error, "Couldn't modify user balance for user #{user_id}: #{inspect(changeset.errors)}"}
                   end
-                changeset = Betunfair.Bet.changeset(%Betunfair.Bet{}, %{user_id: user_id, market_id: market_id, original_stake: stake, remaining_stake: stake, odds: odds, type: type})
+                changeset = Betunfair.Bet.changeset(%Betunfair.Bet{}, %{user_id: user_id, market_id: market_id, original_stake: stake, remaining_stake: stake, odds: odds, type: type, status: "active"})
                 case Betunfair.Repo.insert(changeset) do
                   {:ok, bet} ->
                     {:ok, bet}
@@ -272,7 +273,7 @@ defmodule Betunfair.Bet do
                 original_stake: bet.original_stake,
                 remaining_stake: bet.remaining_stake,
                 matched_bets: [], # TODO: get_matched_bets() -> pending the matchmaking algo
-                status: nil #TODO: get_bet_status() -> pending the matchmaking algo
+                status: bet.status #TODO: get_bet_status() -> pending the matchmaking algo
               }}
             {:error, reason} ->
               {:error, reason}
@@ -332,7 +333,7 @@ defmodule Betunfair.Bet do
   @doc false
   def changeset(bet, attrs) do
     bet
-    |> cast(attrs, [:user_id, :market_id, :odds, :type, :original_stake, :remaining_stake])
+    |> cast(attrs, [:user_id, :market_id, :odds, :type, :original_stake, :remaining_stake, :status])
     |> validate_required([:user_id, :market_id, :odds, :type, :original_stake, :remaining_stake])
     |> assoc_constraint(:user)
     |> assoc_constraint(:market)
