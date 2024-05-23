@@ -5,8 +5,9 @@
     </div>
   </header>
 
-  <div class="flex-1 w-full  p-4">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+  <div class="w-full p-4">
+    <!-- Top Row with Active and Settled Markets -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
       <!-- Active Markets -->
       <section class="bg-gray-800 rounded-lg shadow-lg p-6 flex flex-col">
         <h2 class="text-xl font-bold text-white mb-4">Active Markets</h2>
@@ -35,32 +36,61 @@
         </div>
       </section>
 
-      <!-- Frozen Markets -->
+      <!-- Settled Markets (True) -->
       <section class="bg-gray-800 rounded-lg shadow-lg p-6 flex flex-col">
-        <h2 class="text-xl font-bold text-white mb-4">Frozen Markets</h2>
+        <h2 class="text-xl font-bold text-white mb-4">Lay wins</h2>
         <div class="flex-1 overflow-y-auto">
-          <%= if @frozen_markets do %>
+          <%= if @settled_markets_true do %>
             <ul class="space-y-4">
-              <%= for market <- @frozen_markets do %>
+              <%= for market <- @settled_markets_true do %>
                 <li class="p-4 bg-gray-700 rounded-lg shadow-lg text-white flex justify-between items-center">
                   <div>
                     <h3 class="font-semibold text-lg"><%= market.name %></h3>
                     <p class="text-sm"><%= market.description %></p>
                   </div>
                   <div class="mt-2">
-                    <button class="bg-gray-500 text-white font-bold py-2 px-4 rounded" disabled>
-                      Frozen
+                    <button class="bg-green-500 text-white font-bold py-2 px-4 rounded" disabled>
+                      Lay Win
                     </button>
                   </div>
                 </li>
               <% end %>
             </ul>
           <% else %>
-            <p class="text-white">No frozen markets found.</p>
+            <p class="text-white">No settled markets found.</p>
           <% end %>
         </div>
       </section>
 
+      <!-- Settled Markets (False) -->
+      <section class="bg-gray-800 rounded-lg shadow-lg p-6 flex flex-col">
+        <h2 class="text-xl font-bold text-white mb-4">Back Wins</h2>
+        <div class="flex-1 overflow-y-auto">
+          <%= if @settled_markets_false do %>
+            <ul class="space-y-4">
+              <%= for market <- @settled_markets_false do %>
+                <li class="p-4 bg-gray-700 rounded-lg shadow-lg text-white flex justify-between items-center">
+                  <div>
+                    <h3 class="font-semibold text-lg"><%= market.name %></h3>
+                    <p class="text-sm"><%= market.description %></p>
+                  </div>
+                  <div class="mt-2">
+                    <button class="bg-red-500 text-white font-bold py-2 px-4 rounded" disabled>
+                     Back Win
+                    </button>
+                  </div>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p class="text-white">No settled markets found.</p>
+          <% end %>
+        </div>
+      </section>
+    </div>
+
+    <!-- Bottom Row with Cancelled and Frozen Markets -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
       <!-- Cancelled Markets -->
       <section class="bg-gray-800 rounded-lg shadow-lg p-6 flex flex-col">
         <h2 class="text-xl font-bold text-white mb-4">Cancelled Markets</h2>
@@ -83,6 +113,32 @@
             </ul>
           <% else %>
             <p class="text-white">No cancelled markets found.</p>
+          <% end %>
+        </div>
+      </section>
+
+      <!-- Frozen Markets -->
+      <section class="bg-gray-800 rounded-lg shadow-lg p-6 flex flex-col">
+        <h2 class="text-xl font-bold text-white mb-4">Frozen Markets</h2>
+        <div class="flex-1 overflow-y-auto">
+          <%= if @frozen_markets do %>
+            <ul class="space-y-4">
+              <%= for market <- @frozen_markets do %>
+                <li class="p-4 bg-gray-700 rounded-lg shadow-lg text-white flex justify-between items-center">
+                  <div>
+                    <h3 class="font-semibold text-lg"><%= market.name %></h3>
+                    <p class="text-sm"><%= market.description %></p>
+                  </div>
+                  <div class="mt-2">
+                    <button class="bg-gray-500 text-white font-bold py-2 px-4 rounded" disabled>
+                      Frozen
+                    </button>
+                  </div>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p class="text-white">No frozen markets found.</p>
           <% end %>
         </div>
       </section>

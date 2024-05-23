@@ -28,18 +28,19 @@ defmodule BetunfairWeb.MarketsController do
         end)
         |> Enum.reject(&is_nil/1)
 
+
         active_markets = Enum.filter(markets, &(&1.status == :active))
         frozen_markets = Enum.filter(markets, &(&1.status == :frozen))
         cancelled_markets = Enum.filter(markets, &(&1.status == :cancelled))
-
-        Logger.debug("Active markets: #{inspect(active_markets)}")
-        Logger.debug("Frozen markets: #{inspect(frozen_markets)}")
-        Logger.debug("Cancelled markets: #{inspect(cancelled_markets)}")
+        settled_markets_true = Enum.filter(markets, &(&1.status == {:settled, true}))
+        settled_markets_false = Enum.filter(markets, &(&1.status == {:settled, false}))
 
         render(conn, "markets.html",
           active_markets: active_markets,
           frozen_markets: frozen_markets,
           cancelled_markets: cancelled_markets,
+          settled_markets_false: settled_markets_false,
+          settled_markets_true: settled_markets_true,
           csrf_token: Plug.CSRFProtection.get_csrf_token()
         )
 
