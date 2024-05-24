@@ -129,20 +129,21 @@ defmodule Betunfair.Matched do
 
     def match_bets_loop([back_bet | rest_back_bets], [lay_bet | rest_lay_bets]) do
       # Show the bets that are being matched
-      IO.puts("Trie: Matching back bet: odds #{back_bet.odds}, remaining stake #{back_bet.remaining_stake}, lay bet: odds #{lay_bet.odds}, remaining stake #{lay_bet.remaining_stake}")
       if potential_match?(back_bet, lay_bet) do
-        IO.puts("Matched back bet: odds #{back_bet.odds}, remaining stake #{back_bet.remaining_stake}, lay bet: odds #{lay_bet.odds}, remaining stake #{lay_bet.remaining_stake}")
         {matched_amount, new_back_stake, new_lay_stake} = calculate_matched_amount(back_bet, lay_bet)
         update_bet_stakes(back_bet, lay_bet, new_back_stake, new_lay_stake)
-        if back_bet.remaining_stake == 0.0 do
+        if new_back_stake == 0.0 do
           balance_empty = back_bet.remaining_stake * back_bet.odds
           balance_remain = back_bet.remaining_stake
           empty_stake = "back"
           save_matched_bet(back_bet.id, lay_bet.id, matched_amount, balance_empty, balance_remain, empty_stake)
+          IO.inspect("Back bet empty #{new_back_stake}")
         else
           balance_empty = back_bet.remaining_stake - new_back_stake
           balance_remain = lay_bet.remaining_stake
           empty_stake = "lay"
+          IO.inspect("Lay bet stake: #{new_lay_stake}")
+          IO.inspect("Back bet stake: #{new_back_stake}")
           save_matched_bet(back_bet.id, lay_bet.id, matched_amount, balance_empty, balance_remain, empty_stake)
         end
 
