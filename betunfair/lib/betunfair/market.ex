@@ -92,15 +92,13 @@ defmodule Betunfair.Market do
                     {:ok} ->
                       {:reply, {:ok, market_id}, state}
                     {:error, reason} ->
-                      {:reply, {:error, reason, "ERROR AL CREAR EL HIJO"}, state}
+                      {:reply, {:error, reason}, state}
                   end
-
                 {:error, reason} ->
-                  {:reply, {:error, reason, "ERROR AL CREAR EL HIJO"}, state}
+                  {:reply, {:error, reason}, state}
               end
-              #{:reply, {:ok, market_id}, state}
-            {:error, reason, texto} ->
-              {:reply, {:error, reason, texto}, state}
+            {:error, reason} ->
+              {:reply, {:error, reason}, state}
           end
         _market ->
           # Ya existe un mercado con el mismo nombre, maneja este caso según tus necesidades
@@ -119,7 +117,7 @@ defmodule Betunfair.Market do
             {:ok, _pid} ->
               {:ok, market.id}
             {:error, reason} ->
-              {:error, reason, "ERROR AL CREAR EL HIJO"}
+              {:error, reason}
           end
         {:error, reason} ->
           {:error, reason}
@@ -165,8 +163,8 @@ defmodule Betunfair.Market do
       case GenServer.call(:market_gestor, {:market_create, name, description}) do
         {:ok, market_id} ->
           {:ok, market_id}
-        {:error, reason, texto} ->
-          {:error, reason, texto}
+        {:error, reason} ->
+          {:error, reason}
       end
     end
 
