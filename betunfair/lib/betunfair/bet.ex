@@ -140,7 +140,6 @@ defmodule Betunfair.Bet do
       }
     end
 
-    #TODO: group handle_calls?
     def handle_call({:back_bet, user_id, market_id, stake, odds}, _from, state) do
       case insert_bet(user_id, market_id, stake, odds, "back") do
         {:ok, bet} ->
@@ -247,7 +246,6 @@ defmodule Betunfair.Bet do
       }
     end
 
-
     def handle_call({:bet_get, bet_id}, _from, state) do
       case Betunfair.Repo.get(Betunfair.Bet, bet_id) do
         nil ->
@@ -260,8 +258,10 @@ defmodule Betunfair.Bet do
     def get_matched_bets(bet) do
       query = from m in Betunfair.Matched,
               where: m.id_bet_backed == ^bet.id or m.id_bet_layed == ^bet.id,
-              select: m.id
-      bets = Betunfair.Repo.all(query)
+              select: {m.id_bet_backed, m.id_bet_layed}
+      Betunfair.Repo.all(query)
+      |> Enum.flat_map(fn {backed_id, layed_id} -> [backed_id, layed_id] end)
+      |> Enum.reject(&(&1 == bet.id))
     end
 
     #@spec  bet_get(id :: bet_id()) :: {:ok, %{bet_type: :back | :lay, market_id: market_id(), user_id: user_id(), odds: integer(), original_stake: integer(), remaining_stake: integer(), matched_bets: [bet_id()], status: :active | :cancelled | :market_cancelled {:market_settled, | boolean()}}}
@@ -359,11 +359,9 @@ defmodule Betunfair.Bet do
                 {:error, changeset} ->
                   {:error, "Could not update the bet with id #{bet_id}; #{inspect(changeset.errors)}", state}
                 _ ->
-                  changeset = Betunfair.Bet.changeset(bet, %{remaining_stake: 0})
+                  changeset = Betunfair.Bet.changeset(bet, %{remaining_stake: 0, status: :cancelled})
                   case Betunfair.Repo.update(changeset) do
                     {:ok, bet} ->
-                      IO.puts("Bet updated successfully: #{inspect(bet)}")
-
                       {:reply, {:ok, bet}, state}
                     {:error, changeset} ->
                       {:error, "Could not update the bet with id #{bet_id}; #{inspect(changeset.errors)}", state}
