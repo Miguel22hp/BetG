@@ -359,7 +359,7 @@ defmodule Betunfair.Bet do
                 {:error, changeset} ->
                   {:error, "Could not update the bet with id #{bet_id}; #{inspect(changeset.errors)}", state}
                 _ ->
-                  changeset = Betunfair.Bet.changeset(bet, %{remaining_stake: 0, status: :cancelled})
+                  changeset = Betunfair.Bet.changeset(bet, %{remaining_stake: 0, status: "cancelled"})
                   case Betunfair.Repo.update(changeset) do
                     {:ok, bet} ->
                       {:reply, {:ok, bet}, state}
