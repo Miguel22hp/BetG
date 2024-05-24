@@ -39,18 +39,14 @@ defmodule Betunfair.Market do
 
     def createProcessMarket(market) do
       child_name = :"market_#{market.id}"
-      IO.puts("Creando proceso #{child_name}")
       if Process.whereis(child_name) == nil do
-        IO.puts("Dentro del if #{child_name}")
         Supervisor.start_child(:market_supervisor, {Betunfair.Market.OperationsMarket, {:args, child_name, market.id}})
       end
     end
 
     def createProcessBetSupervisor(market_id) do
       child_name = :"supervisor_bet_market_#{market_id}"
-      IO.puts("Creando proceso BetSupervisor #{child_name}")
       if Process.whereis(child_name) == nil do
-        IO.puts("Dentro del if BetSupervisor #{child_name}")
         child_spec = Betunfair.Bet.SupervisorMarketBet.child_spec({:args, child_name, market_id})
         Supervisor.start_child(:bet_supervisor, child_spec)
       end
@@ -58,9 +54,7 @@ defmodule Betunfair.Market do
 
     def createProcessMatched(market_id) do
       child_name = :"match_#{market_id}"
-      IO.puts("Creando proceso #{child_name}")
       if Process.whereis(child_name) == nil do
-        IO.puts("Dentro del if #{child_name}")
         Supervisor.start_child(:matched_supervisor, {Betunfair.Matched.OperationsMatched, {:args, child_name, market_id}})
       end
     end
@@ -74,7 +68,6 @@ defmodule Betunfair.Market do
     end
 
     def init(args) do
-      IO.puts("Gestor de mercado creado con nombre")
       {:ok, args}
     end
 
@@ -103,7 +96,7 @@ defmodule Betunfair.Market do
         _market ->
           # Ya existe un mercado con el mismo nombre, maneja este caso según tus necesidades
           # Por ejemplo, podrías devolver un error o lanzar una excepción
-          {:reply, {:error, "Ya existe un mercado con el mismo nombre"}, state}
+          {:reply, {:error, "A market with that name already exists"}, state}
       end
     end
 
@@ -111,7 +104,6 @@ defmodule Betunfair.Market do
       case insert_market(name, description) do
         {:ok, market} ->
           child_name = :"market_#{market.id}" #nombre del hijo
-          IO.puts("Nombre del hijo: #{child_name}")
           child_spec = Betunfair.Market.OperationsMarket.child_spec({:args, child_name, market.id})
           case Supervisor.start_child(:market_supervisor, child_spec) do
             {:ok, _pid} ->
@@ -131,7 +123,7 @@ defmodule Betunfair.Market do
         {:ok, market} ->
           {:ok, market}
         {:error, changeset} ->
-          {:error, "No se pudo insertar el mercado: #{inspect(changeset.errors)}"}
+          {:error, "Market couldn't be inserted. The reason: #{inspect(changeset.errors)}"}
       end
     end
 
@@ -139,7 +131,7 @@ defmodule Betunfair.Market do
       markets = Betunfair.Repo.all(Betunfair.Market)
       case markets do
         [] ->
-          {:reply, {:error, "No hay mercados"}, state}
+          {:reply, {:ok, []}, state}
         _markets ->
           market_ids = Enum.map(markets, &(&1.id))
           {:reply, {:ok, market_ids}, state}
@@ -150,7 +142,7 @@ defmodule Betunfair.Market do
       markets = Betunfair.Repo.all(Betunfair.Market)
       case markets do
         [] ->
-          {:reply, {:error, "No hay mercados"}, state}
+          {:reply, {:ok, []}, state}
         _markets ->
           active_markets = Enum.filter(markets, fn market -> market.status == "active" end)
           market_ids = Enum.map(active_markets, &(&1.id))
@@ -211,7 +203,6 @@ defmodule Betunfair.Market do
     end
 
     def init(market_id) do
-      IO.puts("Market created with ID: #{market_id}")
       {:ok, market_id}
     end
 
@@ -227,7 +218,7 @@ defmodule Betunfair.Market do
     def handle_call({:market_get, market_id}, _from, state) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
-          {:reply, {:error, "No se encontró el market"}, state}
+          {:reply, {:error, "Market was not found"}, state}
         market ->
           {:reply, {:ok, market}, state}
       end
@@ -253,7 +244,7 @@ defmodule Betunfair.Market do
     def handle_call({:market_cancel, market_id, market}, _from, state) do
       #Check if the market is active
       if market.status != "active" do
-        {:reply, {:error, "El mercado no está activo"}, state}
+        {:reply, {:error, "Market is not active"}, state}
       else
         # Modify the status to cancelled and insert it in the database
         changeset = Betunfair.Market.changeset(market, %{status: "cancelled"})
@@ -264,16 +255,14 @@ defmodule Betunfair.Market do
             bets = Betunfair.Repo.all(query)
             results = for bet <- bets do
               # Obtain the original stake and the user_id
-              original_stake = trunc(bet.original_stake) #TODO: esto esta mal, lo trunco de momento, pero debería ser un float el balance de users
+              original_stake = bet.original_stake
               user_id = bet.user_id
 
               # Do a deposit to the user with the original stake
               case Betunfair.User.OperationsUser.user_deposit(user_id, original_stake) do
                 :ok ->
-                  IO.puts("Depósito realizado con éxito")
                   {:ok}
                 {:error, reason} ->
-                  IO.puts("Error al realizar el depósito")
                   {:error, reason}
               end
             end
@@ -283,7 +272,7 @@ defmodule Betunfair.Market do
               {:reply, {:error, "Some deposits failed"}, state}
             end
           {:error, changeset} ->
-            {:reply, {:error, "No se pudo cancelar el mercado"}, state}
+            {:reply, {:error, "Market could not be cancelled"}, state}
         end
       end
 
@@ -291,7 +280,7 @@ defmodule Betunfair.Market do
 
     def handle_call({:market_freeze, market_id, market}, _from, state) do
       if market.status != "active" do
-        {:reply, {:error, "El mercado no está activo"}, state}
+        {:reply, {:error, "Market is not active"}, state}
       else
         changeset = Betunfair.Market.changeset(market, %{status: "frozen"})
         case Betunfair.Repo.update(changeset) do
@@ -301,16 +290,14 @@ defmodule Betunfair.Market do
             bets = Betunfair.Repo.all(query)
             results = for bet <- bets do
               # Obtain the remaing stake and the user_id
-              remaining_stake = trunc(bet.remaining_stake) #TODO: esto esta mal, lo trunco de momento, pero debería ser un float el balance de users
+              remaining_stake = bet.remaining_stake
               user_id = bet.user_id
 
               # Do a deposit to the user with the original stake
               case Betunfair.User.OperationsUser.user_deposit(user_id, remaining_stake) do
                 :ok ->
-                  IO.puts("Depósito realizado con éxito")
                   {:ok}
                 {:error, reason} ->
-                  IO.puts("Error al realizar el depósito")
                   {:error, reason}
               end
             end
@@ -320,7 +307,7 @@ defmodule Betunfair.Market do
               {:reply, {:error, "Some deposits failed"}, state}
             end
           {:error, changeset} ->
-            {:reply, {:error, "No se pudo cancelar el mercado"}, state}
+            {:reply, {:error, "Market could not be cancelled"}, state}
         end
       end
     end
@@ -340,9 +327,9 @@ defmodule Betunfair.Market do
               IO.puts("Matched Empty: #{inspect(match.empty_stake)}")
               selected_stake =
                 if (result == true and match.empty_stake == "back") or (result == false and match.empty_stake == "lay") do
-                  trunc(match.balance_empty_stake) #TODO: esto esta mal, lo trunco de momento, pero debería ser un float el balance de users
+                  match.balance_empty_stake
                 else
-                  trunc(match.balance_remain_stake) #TODO: esto esta mal, lo trunco de momento, pero debería ser un float el balance de users
+                  match.balance_remain_stake
               end
 
               bet =
@@ -358,10 +345,8 @@ defmodule Betunfair.Market do
               # Do a deposit to the user with the original stake
               case Betunfair.User.OperationsUser.user_deposit(bet.user_id, selected_stake) do
                 :ok ->
-                  IO.puts("Depósito realizado con éxito")
                   {:ok}
                 {:error, reason} ->
-                  IO.puts("Error al realizar el depósito")
                   {:error, reason}
               end
             end
@@ -371,7 +356,7 @@ defmodule Betunfair.Market do
               {:reply, {:error, "Some deposits failed"}, state}
             end
           {:error, changeset} ->
-            {:reply, {:error, "No se pudo cancelar el mercado"}, state}
+            {:reply, {:error, "Market could not be cancelled"}, state}
         end
       end
       #Obtengo todos los match del market. Para ello, consigo la lista de bets matcheadas y veo su market_id
@@ -384,7 +369,7 @@ defmodule Betunfair.Market do
     def market_cancel(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
-          {:error, "No se encontró el market"}
+          {:error, "Market was not found"}
         market ->
           case GenServer.call(:"market_#{market_id}", {:market_cancel, market_id, market}) do
             :ok ->
@@ -398,7 +383,7 @@ defmodule Betunfair.Market do
     def market_freeze(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
-          {:error, "No se encontró el market"}
+          {:error, "Market was not found"}
         market ->
           case GenServer.call(:"market_#{market_id}", {:market_freeze, market_id, market}) do
             :ok ->
@@ -412,21 +397,27 @@ defmodule Betunfair.Market do
     def market_settle(market_id, result) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
-          {:error, "No se encontró el market"}
+          {:error, "Market was not found"}
         market ->
-          case GenServer.call(:"market_#{market_id}", {:market_settle, market_id, market, result}) do
+          case GenServer.call(:"market_#{market_id}", {:market_freeze, market_id, market}) do
             :ok ->
-              :ok
+              case GenServer.call(:"market_#{market_id}", {:market_settle, market_id, market, result}) do
+                :ok ->
+                  :ok
+                {:error, reason} ->
+                  {:error, reason}
+              end
             {:error, reason} ->
               {:error, reason}
           end
+
       end
     end
 
     def market_bets(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
-          {:error, "No se encontró el market"}
+          {:error, "Market was not found"}
         market ->
           case GenServer.call(:"market_#{market_id}", {:market_bets, market_id, market}) do
             {:ok, bet_ids} ->
@@ -440,7 +431,7 @@ defmodule Betunfair.Market do
     def market_get(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
-          {:error, "No se encontró el market"}
+          {:error, "Market was not found"}
         market ->
           case GenServer.call(:"market_#{market_id}", {:market_get, market_id}) do
             {:ok, market} ->
@@ -474,9 +465,8 @@ defmodule Betunfair.Market do
     def market_match(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
-          {:error, "No se encontró el market"}
+          {:error, "Market was not found"}
         market ->
-          IO.puts("Market Match Comienza")
           case GenServer.call(:"match_#{market_id}", {:market_match, market_id}) do
             {:ok} ->
               :ok
@@ -489,7 +479,7 @@ defmodule Betunfair.Market do
     def market_pending_backs(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
-          {:error, "No se encontró el market"}
+          {:error, "Market was not found"}
         market ->
           case GenServer.call(:"market_#{market_id}", {:market_pending_backs, market_id}) do
             {:ok, bet_ids} ->
@@ -503,7 +493,7 @@ defmodule Betunfair.Market do
     def market_pending_lays(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
-          {:error, "No se encontró el market"}
+          {:error, "Market was not found"}
         market ->
           case GenServer.call(:"market_#{market_id}", {:market_pending_lays, market_id}) do
             {:ok, bet_ids} ->
