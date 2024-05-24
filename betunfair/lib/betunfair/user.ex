@@ -56,7 +56,7 @@ defmodule Betunfair.User do
     end
 
     def handle_call({:user_create, id, name}, _from, state) do
-      case Betunfair.User.SupervisorUser.user_create(id, name) do
+      case Betunfair.User.GestorUser.add_child_operation(name, id) do
         {:ok, user_id} ->
           {:reply, {:ok, user_id}, state}
         {:error, reason} ->
@@ -67,12 +67,8 @@ defmodule Betunfair.User do
     def user_create(id , name) do
       case Betunfair.Repo.get_by(Betunfair.User, id_users: id) do
         nil ->
-          # No hay ningún usuario con el mismo ID, puedes proceder a crear el usuario
-          # Aquí iría la lógica para crear el usuario
-          add_child_operation(name, id)
+          GenServer.call(:user_gestor, {:user_create, id, name})
         _user ->
-          # Ya existe un usuario con el mismo ID, maneja este caso según tus necesidades
-          # Por ejemplo, podrías devolver un error o lanzar una excepción
           {:error, "A user with the same ID already exists"}
       end
     end
