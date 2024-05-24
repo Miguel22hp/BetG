@@ -247,7 +247,7 @@ defmodule Betunfair.Bet do
       }
     end
 
-    #TODO: group handle_calls?
+
     def handle_call({:bet_get, bet_id}, _from, state) do
       case Betunfair.Repo.get(Betunfair.Bet, bet_id) do
         nil ->
@@ -273,7 +273,6 @@ defmodule Betunfair.Bet do
         _bet ->
           case GenServer.call(:"bet_#{id}", {:bet_get, id}) do
             {:ok, bet} ->
-              #TODO: matched_bets()
               case bet.status do
                 "active" ->
                   case Betunfair.Repo.get(Betunfair.Market, bet.market_id) do
@@ -364,9 +363,7 @@ defmodule Betunfair.Bet do
                   case Betunfair.Repo.update(changeset) do
                     {:ok, bet} ->
                       IO.puts("Bet updated successfully: #{inspect(bet)}")
-                      #TODO: end the bet process because it has been cancelled?
-                      #pid = Process.whereis(:"bet_#{bet_id}")
-                      #Process.exit(pid, :normal)
+
                       {:reply, {:ok, bet}, state}
                     {:error, changeset} ->
                       {:error, "Could not update the bet with id #{bet_id}; #{inspect(changeset.errors)}", state}
@@ -385,7 +382,7 @@ defmodule Betunfair.Bet do
         _bet ->
           case GenServer.call(:"bet_#{id}", {:bet_cancel, id}) do
             {:ok, _bets} ->
-              {:ok}
+              :ok
             {:error, reason} ->
               {:error, reason}
           end

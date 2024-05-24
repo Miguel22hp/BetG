@@ -33,25 +33,6 @@ defmodule Betunfair.Matched do
       ]
       IO.puts("Matched supervisor started ")
       Supervisor.init(children, strategy: :one_for_one)
-      #Task.start(fn -> load_matched() end)
-
-    end
-
-    def load_matched() do
-      matchs = Betunfair.Repo.all(Betunfair.Matched)
-      for match <- matchs do
-        createProcessMatched(match)
-        Process.sleep(100) # Adds 100 ms delay between process creation sothey do not select the same PID
-      end
-    end
-
-    def createProcessMatched(match) do
-      child_name = :"match_#{match.id}"
-      IO.puts("Creando proceso #{child_name}")
-      if Process.whereis(child_name) == nil do
-        IO.puts("Dentro del if #{child_name}")
-        Supervisor.start_child(:matched_supervisor, {Betunfair.Matched.OperationsMarket, {:args, child_name, match.id}})
-      end
     end
   end
 

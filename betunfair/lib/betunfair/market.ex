@@ -32,6 +32,7 @@ defmodule Betunfair.Market do
       for market <- markets do
         createProcessMarket(market)
         createProcessBetSupervisor(market.id)
+        createProcessMatched(market.id)
         Process.sleep(100) # Adds 100 ms delay between process creation sothey do not select the same PID
       end
     end
@@ -55,6 +56,14 @@ defmodule Betunfair.Market do
       end
     end
 
+    def createProcessMatched(market_id) do
+      child_name = :"match_#{market_id}"
+      IO.puts("Creando proceso #{child_name}")
+      if Process.whereis(child_name) == nil do
+        IO.puts("Dentro del if #{child_name}")
+        Supervisor.start_child(:matched_supervisor, {Betunfair.Matched.OperationsMatched, {:args, child_name, market_id}})
+      end
+    end
   end
 
   defmodule GestorMarket do
