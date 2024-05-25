@@ -270,7 +270,7 @@ defmodule Betunfair.MarketTest do
 
   end
 
-  describe "Market Pending Bets" do
+  describe "Market Pending Bets: " do
 
     test "Market obtain bets of a market" do
       {:ok, market_id} = Betunfair.Market.GestorMarket.market_create("Market 1", "A test market")
@@ -358,6 +358,59 @@ defmodule Betunfair.MarketTest do
     end
 
 
+  end
+
+  describe "Market Match: " do
+
+    test "Match a Market" do
+      {:ok, market_id} = Betunfair.Market.GestorMarket.market_create("Market 1", "A test market")
+      process_name = :"match_#{market_id}" # Construye el átomo correctamente
+      Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
+      process_name = :"market_#{market_id}" # Construye el átomo correctamente
+      Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
+
+      {:ok, user_id} = Betunfair.User.GestorUser.user_create("1", "User 1")
+      process_name2 = :"user_#{user_id}" # Construye el átomo correctamente
+      Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name2)
+
+      {:ok, user_id_2} = Betunfair.User.GestorUser.user_create("2", "User 2")
+      process_name2 = :"user_#{user_id_2}" # Construye el átomo correctamente
+      Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name2)
+
+      process_name = :"gestor_bet_market_#{market_id}"
+      Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
+
+      assert Betunfair.User.OperationsUser.user_deposit(user_id, 100.0) == :ok
+      assert Betunfair.User.OperationsUser.user_deposit(user_id_2, 100.0) == :ok
+      {:ok, bet_id} = Betunfair.Bet.GestorMarketBet.bet_back(user_id,market_id, 50, 1.5)
+      {:ok, bet_id2} = Betunfair.Bet.GestorMarketBet.bet_lay(user_id_2,market_id, 21, 1.5)
+      process_name = :"bet_#{bet_id}"
+      process_name2 = :"bet_#{bet_id2}"
+      Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
+      Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name2)
+      assert Betunfair.Bet.OperationsBet.bet_get(bet_id) == {:ok, %{user_id: user_id, market_id: market_id, original_stake: 50, remaining_stake: 50,odds: 1.5, matched_bets: [],status: :active, bet_type: "back"}}
+      assert Betunfair.Bet.OperationsBet.bet_get(bet_id2) == {:ok, %{user_id: user_id_2, market_id: market_id, original_stake: 21, remaining_stake: 21,odds: 1.5, matched_bets: [],status: :active, bet_type: "lay"}}
+
+      assert Betunfair.Market.OperationsMarket.market_match(market_id) == :ok
+
+      assert Betunfair.Bet.OperationsBet.bet_get(bet_id) == {:ok, %{user_id: user_id, market_id: market_id, original_stake: 50, remaining_stake: 8,odds: 1.5, matched_bets: [bet_id2],status: :active, bet_type: "back"}}
+      assert Betunfair.Bet.OperationsBet.bet_get(bet_id2) == {:ok, %{user_id: user_id_2, market_id: market_id, original_stake: 21, remaining_stake: 0,odds: 1.5, matched_bets: [bet_id],status: :active, bet_type: "lay"}}
+
+    end
+
+    test "Match a Market with no Bets" do
+      {:ok, market_id} = Betunfair.Market.GestorMarket.market_create("Market 1", "A test market")
+      process_name = :"match_#{market_id}" # Construye el átomo correctamente
+      Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
+      process_name = :"market_#{market_id}" # Construye el átomo correctamente
+      Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
+
+      assert Betunfair.Market.OperationsMarket.market_match(market_id) == :ok
+    end
+
+    test "Match a non existing Market" do
+      assert Betunfair.Market.OperationsMarket.market_match(1) == {:error, "Market was not found"}
+    end
   end
 
 end
