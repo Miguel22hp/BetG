@@ -13,7 +13,7 @@ defmodule Betunfair.MarketTest do
   end
 
 
-  describe "Market Creation Test:" do
+  describe "Market Creation Test: " do
     test "create a market" do
       {:ok, market_id} = Betunfair.Market.GestorMarket.market_create("Market 1", "A test market")
       assert {:ok, market_id+1} == Betunfair.Market.GestorMarket.market_create("Market 2", "A test market")
@@ -32,6 +32,31 @@ defmodule Betunfair.MarketTest do
     test "create a market with the same id" do
       {:ok, id} = Betunfair.Market.GestorMarket.market_create("Market 1", "A test market")
       assert Betunfair.Market.GestorMarket.market_create("Market 1", "A test market") == {:error, "A market with the same name already exists"}
+    end
+  end
+
+  describe "Market List Test: " do
+    test "list markets" do
+      {:ok, market_id} = Betunfair.Market.GestorMarket.market_create("Market 1", "A test market")
+      {:ok, market_id_2} = Betunfair.Market.GestorMarket.market_create("Market 2", "A test market")
+      {:ok, market_id_3} = Betunfair.Market.GestorMarket.market_create("Market 3", "A test market")
+      assert Betunfair.Market.GestorMarket.market_list() == {:ok, [market_id, market_id_2, market_id_3]}
+      assert Betunfair.Market.GestorMarket.market_list_active() == {:ok, [market_id, market_id_2, market_id_3]}
+    end
+
+    test "list markets with no markets" do
+      assert Betunfair.Market.GestorMarket.market_list() == {:ok, []}
+      assert Betunfair.Market.GestorMarket.market_list_active() == {:ok, []}
+    end
+
+    test "list markets with no active markets" do
+      {:ok, market_id} = Betunfair.Market.GestorMarket.market_create("Market 1", "A test market")
+      process_name = :"market_#{market_id}" # Construye el átomo correctamente
+      Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
+
+      Betunfair.Market.OperationsMarket.market_cancel(market_id)
+      assert Betunfair.Market.GestorMarket.market_list() == {:ok, [market_id]}
+      assert Betunfair.Market.GestorMarket.market_list_active() == {:ok, []}
     end
   end
 
