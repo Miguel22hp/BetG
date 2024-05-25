@@ -15,6 +15,7 @@ defmodule Betunfair.Matched do
   end
 
   @doc false
+@spec changeset(Ecto.Schema.t(), map()) :: Ecto.Changeset.t()
   def changeset(matched, attrs) do
     matched
     |> cast(attrs, [])
@@ -31,42 +32,26 @@ defmodule Betunfair.Matched do
       children = [
         {Betunfair.Matched.GestorMatched, []}
       ]
-      IO.puts("Matched supervisor started ")
+      # IO.puts("Matched supervisor started ")
       Supervisor.init(children, strategy: :one_for_one)
-      #Task.start(fn -> load_matched() end)
-
-    end
-
-    def load_matched() do
-      matchs = Betunfair.Repo.all(Betunfair.Matched)
-      for match <- matchs do
-        createProcessMatched(match)
-        Process.sleep(100) # Adds 100 ms delay between process creation sothey do not select the same PID
-      end
-    end
-
-    def createProcessMatched(match) do
-      child_name = :"match_#{match.id}"
-      IO.puts("Creando proceso #{child_name}")
-      if Process.whereis(child_name) == nil do
-        IO.puts("Dentro del if #{child_name}")
-        Supervisor.start_child(:matched_supervisor, {Betunfair.Matched.OperationsMarket, {:args, child_name, match.id}})
-      end
     end
   end
 
   defmodule GestorMatched do
     use GenServer
 
+@spec start_link(any()) :: GenServer.on_start()
     def start_link([]) do
       GenServer.start_link(__MODULE__, [], name: :matched_gestor)
     end
 
+@spec init(any()) :: {:ok, any()}
     def init(args) do
-      IO.puts("Matchaming gestor started")
+      # IO.puts("Matchaming gestor started")
       {:ok, args}
     end
 
+@spec handle_call({:add_child_operation, integer()}, GenServer.from(), any()) :: {:reply, {:ok | {:error, any()}}, any()}
     def handle_call({:add_child_operation, market_id}, _from, state) do
       child_name = :"match_#{market_id}"
       child_spec = Betunfair.Matched.OperationsMatched.child_spec({:args, child_name, market_id})
@@ -74,11 +59,12 @@ defmodule Betunfair.Matched do
         {:ok, _pid} ->
           {:reply, {:ok}, state}
         {:error, reason} ->
-          {:reply, {:error, reason, "ERROR AL CREAR EL HIJO"}, state}
+          {:reply, {:error, reason}, state}
       end
     end
 
-    def add_child_operation( market_id) do
+    @spec add_child_operation(integer()) :: :ok
+    def add_child_operation(market_id) do
       GenServer.call(:matched_gestor, {:add_child_operation, market_id})
     end
 
@@ -89,6 +75,7 @@ defmodule Betunfair.Matched do
     use GenServer
     import Ecto.Query, only: [from: 2]
 
+@spec child_spec({:args, atom(), integer()}) :: Supervisor.child_spec()
     def child_spec({:args, child_name, match_id}) do
       %{
         id: child_name,
@@ -99,22 +86,26 @@ defmodule Betunfair.Matched do
       }
     end
 
+@spec start_link(integer()) :: GenServer.on_start()
     def start_link(match_id) do
       child_name = :"match_#{match_id}" # nombre del hijo
       GenServer.start_link(__MODULE__, match_id, name: child_name)
     end
 
+@spec init(integer()) :: {:ok, integer()}
     def init(match_id) do
-      IO.puts("Matcher created with ID: #{match_id}")
+      # IO.puts("Matcher created with ID: #{match_id}")
       {:ok, match_id}
     end
 
+@spec handle_call({:market_match, market_id :: integer()}, GenServer.from(), any()) :: {:reply, {:ok}, any()}
     def handle_call({:market_match, market_id}, _from, state) do
       match_bets(market_id)
       {:reply, {:ok}, state}
     end
 
     # Step 1: Fetch pending back and lay bets for the specific market
+@spec match_bets(market_id :: integer()) :: :ok
     def match_bets(market_id) do
       back_bets = fetch_pending_back_bets(market_id) # Obtains all the back bets
       lay_bets = fetch_pending_lay_bets(market_id) # Obtains all the lay bets
@@ -124,25 +115,28 @@ defmodule Betunfair.Matched do
     end
 
     # Step 2-6: Iterate through potential matches until no more matches
+@spec match_bets_loop(back_bets :: list(), lay_bets :: list()) :: :ok
     def match_bets_loop([], _), do: :ok
     def match_bets_loop(_, []), do: :ok
 
+@spec match_bets_loop(back_bets :: [map()], lay_bets :: [map()]) :: :ok
     def match_bets_loop([back_bet | rest_back_bets], [lay_bet | rest_lay_bets]) do
       # Show the bets that are being matched
-      IO.puts("Trie: Matching back bet: odds #{back_bet.odds}, remaining stake #{back_bet.remaining_stake}, lay bet: odds #{lay_bet.odds}, remaining stake #{lay_bet.remaining_stake}")
       if potential_match?(back_bet, lay_bet) do
-        IO.puts("Matched back bet: odds #{back_bet.odds}, remaining stake #{back_bet.remaining_stake}, lay bet: odds #{lay_bet.odds}, remaining stake #{lay_bet.remaining_stake}")
         {matched_amount, new_back_stake, new_lay_stake} = calculate_matched_amount(back_bet, lay_bet)
         update_bet_stakes(back_bet, lay_bet, new_back_stake, new_lay_stake)
-        if back_bet.remaining_stake == 0.0 do
+        if new_back_stake == 0.0 do
           balance_empty = back_bet.remaining_stake * back_bet.odds
           balance_remain = back_bet.remaining_stake
           empty_stake = "back"
           save_matched_bet(back_bet.id, lay_bet.id, matched_amount, balance_empty, balance_remain, empty_stake)
+          # IO.inspect("Back bet empty #{new_back_stake}")
         else
           balance_empty = back_bet.remaining_stake - new_back_stake
           balance_remain = lay_bet.remaining_stake
           empty_stake = "lay"
+          # IO.inspect("Lay bet stake: #{new_lay_stake}")
+          # IO.inspect("Back bet stake: #{new_back_stake}")
           save_matched_bet(back_bet.id, lay_bet.id, matched_amount, balance_empty, balance_remain, empty_stake)
         end
 
@@ -151,8 +145,6 @@ defmodule Betunfair.Matched do
 
         #IO.puts("Matched amount: #{matched_amount}, new_back_stake: #{new_back_stake}, new_lay_stake: #{new_lay_stake}")
         # IO.puts("Updated back bet: odds #{updated_back_bet.odds}, remaining stake #{updated_back_bet.remaining_stake}, updated lay bet: odds #{updated_lay_bet.odds}, remaining stake #{updated_lay_bet.remaining_stake}")
-
-        updated_back_bets = if updated_back_bet.remaining_stake > 0, do: [updated_back_bet | rest_back_bets], else: rest_back_bets
 
         updated_back_bets = if updated_back_bet.remaining_stake > 0, do: [updated_back_bet | rest_back_bets], else: rest_back_bets
         updated_lay_bets = if updated_lay_bet.remaining_stake > 0, do: [updated_lay_bet | rest_lay_bets], else: rest_lay_bets
@@ -164,6 +156,7 @@ defmodule Betunfair.Matched do
     end
 
     # Step 2: Find potential matches
+@spec potential_match?(back_bet :: map(), lay_bet :: map()) :: is_potential :: boolean()
     def potential_match?(back_bet, lay_bet) do
       back_bet.odds <= lay_bet.odds
     end
@@ -171,6 +164,7 @@ defmodule Betunfair.Matched do
 
 
   # Step 3: Calculate matched amount
+@spec calculate_matched_amount(back_bet :: map(), lay_bet :: map()) :: {matched_amount :: float(), new_back_stake :: float(), new_lay_stake :: float()}
   def calculate_matched_amount(back_bet, lay_bet) do
     if (back_bet.remaining_stake * back_bet.odds - back_bet.remaining_stake) >= lay_bet.remaining_stake do
       lay_stake_consumed = lay_bet.remaining_stake / (back_bet.odds - 1)
@@ -181,6 +175,7 @@ defmodule Betunfair.Matched do
     end
   end
 
+@spec update_bet_stakes(back_bet :: map(), lay_bet :: map(), new_back_stake :: float(), new_lay_stake :: float()) :: :ok
     def update_bet_stakes(back_bet, lay_bet, new_back_stake, new_lay_stake) do
       # Create changesets for the updated bets
       updated_back_bet_changeset =
@@ -211,8 +206,9 @@ defmodule Betunfair.Matched do
     end
 
     # Step 5: Record matched bets
+@spec save_matched_bet(back_bet_id :: integer(), lay_bet_id :: integer(), matched_amount :: float(), balance_empty :: float(), balance_remain :: float(), empty_stake :: String.t()) :: :ok
     def save_matched_bet(back_bet_id, lay_bet_id, matched_amount, balance_empty, balance_remain, empty_stake) do
-      IO.puts("Matched amount: #{matched_amount}, balance_empty_stake: #{balance_empty}, balance_remain_stake: #{balance_remain}. Empty stake: #{empty_stake}")
+      # IO.puts("Matched amount: #{matched_amount}, balance_empty_stake: #{balance_empty}, balance_remain_stake: #{balance_remain}. Empty stake: #{empty_stake}")
       matched_bet = %Matched{
         id_bet_backed: back_bet_id,
         id_bet_layed: lay_bet_id,
@@ -226,16 +222,19 @@ defmodule Betunfair.Matched do
     end
 
     # Helper functions for database operations
+@spec fetch_pending_back_bets(market_id :: integer()) :: list()
     def fetch_pending_back_bets(market_id) do
       query = from(b in Bet, where: b.market_id == ^market_id and b.remaining_stake > 0.0 and b.type == "back", order_by: [asc: b.odds])
       Betunfair.Repo.all(query)
     end
 
+@spec fetch_pending_lay_bets(market_id :: integer()) :: list()
     def fetch_pending_lay_bets(market_id) do
       query = from(l in Bet, where: l.market_id == ^market_id and l.remaining_stake > 0.0 and l.type == "lay", order_by: [desc: l.odds])
       Betunfair.Repo.all(query)
     end
 
+@spec round_to_two(stake_or_odds :: float()) :: float()
     defp round_to_two(value) do
       Float.round(value, 2)
     end

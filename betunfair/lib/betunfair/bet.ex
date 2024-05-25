@@ -8,6 +8,7 @@ defmodule Betunfair.Bet do
     field :original_stake, :float
     field :remaining_stake, :float
     field :type, :string
+    field :status, :string
     #adding the user_id and market_id as a FK on Ecto Schema
     belongs_to :user, Betunfair.User
     belongs_to :market, Betunfair.Market
@@ -77,7 +78,7 @@ defmodule Betunfair.Bet do
         {:ok, _pid} ->
           {:reply, {:ok}, state}
         {:error, reason} ->
-          {:reply, {:error, reason, "ERROR AL CREAR EL HIJO"}, state}
+          {:reply, {:error, reason}, state}
       end
 
     end
@@ -142,19 +143,10 @@ defmodule Betunfair.Bet do
       }
     end
 
-    #TODO: group handle_calls?
     def handle_call({:back_bet, user_id, market_id, stake, odds}, _from, state) do
       case insert_bet(user_id, market_id, stake, odds, "back") do
         {:ok, bet} ->
-          child_name = :"bet_#{bet.id}"
-          child_spec = Betunfair.Bet.OperationsBet.child_spec({:args, bet.id, child_name})
-          process_name = :"supervisor_bet_market_#{market_id}"
-          case Supervisor.start_child(process_name, child_spec) do
-            {:ok, _pid} ->
-              {:reply, {:ok, bet.id}, state}
-            {:error, reason} ->
-              {:reply, {:error, reason}, state}
-          end
+          create_bet(bet, market_id, state)
         {:error, reason} ->
           {:reply, {:error, reason}, state}
       end
@@ -169,15 +161,19 @@ defmodule Betunfair.Bet do
     def handle_call({:lay_bet, user_id, market_id, stake, odds}, _from, state) do
       case insert_bet(user_id, market_id, stake, odds, "lay") do
         {:ok, bet} ->
-          child_name = :"bet_#{bet.id}"
-          child_spec = Betunfair.Bet.OperationsBet.child_spec({:args, bet.id, child_name})
-          process_name = :"supervisor_bet_market_#{market_id}"
-          case Supervisor.start_child(process_name, child_spec) do
-            {:ok, _pid} ->
-              {:reply, {:ok, bet.id}, state}
-            {:error, reason} ->
-              {:reply, {:error, reason}, state}
-          end
+          create_bet(bet, market_id, state)
+        {:error, reason} ->
+          {:reply, {:error, reason}, state}
+        end
+    end
+
+    def create_bet(bet, market_id, state) do
+      child_name = :"bet_#{bet.id}"
+      child_spec = Betunfair.Bet.OperationsBet.child_spec({:args, bet.id, child_name})
+      process_name = :"supervisor_bet_market_#{market_id}"
+      case Supervisor.start_child(process_name, child_spec) do
+        {:ok, _pid} ->
+          {:reply, {:ok, bet.id}, state}
         {:error, reason} ->
           {:reply, {:error, reason}, state}
       end
@@ -202,24 +198,26 @@ defmodule Betunfair.Bet do
           else
             case Betunfair.Repo.get(Betunfair.Market, market_id) do
               nil ->
-                {:error, "market with id #{user_id} doesn't exist"}
-              _market ->
-                Logger.info("Creating bet for user #{user_id} on market #{market_id} with stake #{stake}$ and odds #{odds}")
-                changeset = Betunfair.User.changeset(user, %{balance: user.balance - stake})
-                Logger.info(changeset)
-                case Betunfair.Repo.update(changeset) do
-                  {:ok, user} ->
-                    IO.puts("updated user #{user_id} balance due to new inserted bet")
-                    {:ok, user}
-                  {:error, changeset} ->
-                    {:error, "Couldn't modify user balance for user #{user_id}: #{inspect(changeset.errors)}"}
+                {:error, "market with id #{market_id} doesn't exist"}
+              market ->
+                if market.status == "active" do
+                  changeset = Betunfair.User.changeset(user, %{balance: user.balance - stake})
+                  case Betunfair.Repo.update(changeset) do
+                    {:ok, user} ->
+                      IO.puts("updated user #{user_id} balance due to new inserted bet")
+                      {:ok, user}
+                    {:error, changeset} ->
+                      {:error, "Couldn't modify user balance for user #{user_id}: #{inspect(changeset.errors)}"}
+                    end
+                  changeset = Betunfair.Bet.changeset(%Betunfair.Bet{}, %{user_id: user_id, market_id: market_id, original_stake: stake, remaining_stake: stake, odds: odds, type: type, status: "active"})
+                  case Betunfair.Repo.insert(changeset) do
+                    {:ok, bet} ->
+                      {:ok, bet}
+                    {:error, changeset} ->
+                      {:error, "Couldn't create the bet for user #{user_id}: #{inspect(changeset.errors)}"}
                   end
-                changeset = Betunfair.Bet.changeset(%Betunfair.Bet{}, %{user_id: user_id, market_id: market_id, original_stake: stake, remaining_stake: stake, odds: odds, type: type})
-                case Betunfair.Repo.insert(changeset) do
-                  {:ok, bet} ->
-                    {:ok, bet}
-                  {:error, changeset} ->
-                    {:error, "Couldn't create the bet for user #{user_id}: #{inspect(changeset.errors)}"}
+                else
+                  {:error, "cannot insert bet for market #{market.id}: is not active"}
                 end
               end
           end
@@ -229,6 +227,7 @@ defmodule Betunfair.Bet do
   end
 
   defmodule OperationsBet do
+    import Ecto.Query, only: [from: 2]
     alias Betunfair.Bet
     use GenServer
 
@@ -251,7 +250,6 @@ defmodule Betunfair.Bet do
       }
     end
 
-    #TODO: group handle_calls?
     def handle_call({:bet_get, bet_id}, _from, state) do
       case Betunfair.Repo.get(Betunfair.Bet, bet_id) do
         nil ->
@@ -259,6 +257,15 @@ defmodule Betunfair.Bet do
         bet ->
           {:reply, {:ok, bet}, state}
       end
+    end
+
+    def get_matched_bets(bet) do
+      query = from m in Betunfair.Matched,
+              where: m.id_bet_backed == ^bet.id or m.id_bet_layed == ^bet.id,
+              select: {m.id_bet_backed, m.id_bet_layed}
+      Betunfair.Repo.all(query)
+      |> Enum.flat_map(fn {backed_id, layed_id} -> [backed_id, layed_id] end)
+      |> Enum.reject(&(&1 == bet.id))
     end
 
     #@spec  bet_get(id :: bet_id()) :: {:ok, %{bet_type: :back | :lay, market_id: market_id(), user_id: user_id(), odds: integer(), original_stake: integer(), remaining_stake: integer(), matched_bets: [bet_id()], status: :active | :cancelled | :market_cancelled {:market_settled, | boolean()}}}
@@ -270,16 +277,71 @@ defmodule Betunfair.Bet do
         _bet ->
           case GenServer.call(:"bet_#{id}", {:bet_get, id}) do
             {:ok, bet} ->
-              {:ok, %{
-                bet_type: bet.type,
-                market_id: bet.market_id,
-                user_id: bet.user_id,
-                odds: bet.odds,
-                original_stake: bet.original_stake,
-                remaining_stake: bet.remaining_stake,
-                matched_bets: [], # TODO: get_matched_bets() -> pending the matchmaking algo
-                status: nil #TODO: get_bet_status() -> pending the matchmaking algo
-              }}
+              case bet.status do
+                "active" ->
+                  case Betunfair.Repo.get(Betunfair.Market, bet.market_id) do
+                    nil ->
+                      {:error, "market #{bet.market_id} doesn't exist"}
+                    market ->
+                      case market.status do
+                        "cancelled" ->
+                          {:ok, %{
+                            bet_type: bet.type,
+                            market_id: bet.market_id,
+                            user_id: bet.user_id,
+                            odds: bet.odds,
+                            original_stake: bet.original_stake,
+                            remaining_stake: bet.remaining_stake,
+                            matched_bets: get_matched_bets(bet),
+                            status: :market_cancelled
+                          }}
+                        "true" ->
+                          {:ok, %{
+                            bet_type: bet.type,
+                            market_id: bet.market_id,
+                            user_id: bet.user_id,
+                            odds: bet.odds,
+                            original_stake: bet.original_stake,
+                            remaining_stake: bet.remaining_stake,
+                            matched_bets: get_matched_bets(bet),
+                            status: {:market_settled, true}
+                          }}
+                          "false" ->
+                            {:ok, %{
+                              bet_type: bet.type,
+                              market_id: bet.market_id,
+                              user_id: bet.user_id,
+                              odds: bet.odds,
+                              original_stake: bet.original_stake,
+                              remaining_stake: bet.remaining_stake,
+                              matched_bets: get_matched_bets(bet),
+                              status: {:market_settled, false}
+                            }}
+                          _  ->
+                            {:ok, %{
+                              bet_type: bet.type,
+                              market_id: bet.market_id,
+                              user_id: bet.user_id,
+                              odds: bet.odds,
+                              original_stake: bet.original_stake,
+                              remaining_stake: bet.remaining_stake,
+                              matched_bets: get_matched_bets(bet),
+                              status: String.to_atom(bet.status)
+                            }}
+                      end
+                  end
+                "cancelled" ->
+                  {:ok, %{
+                    bet_type: bet.type,
+                    market_id: bet.market_id,
+                    user_id: bet.user_id,
+                    odds: bet.odds,
+                    original_stake: bet.original_stake,
+                    remaining_stake: bet.remaining_stake,
+                    matched_bets: get_matched_bets(bet),
+                    status: String.to_atom(bet.status)
+                  }}
+              end
             {:error, reason} ->
               {:error, reason}
           end
@@ -301,13 +363,9 @@ defmodule Betunfair.Bet do
                 {:error, changeset} ->
                   {:error, "Could not update the bet with id #{bet_id}; #{inspect(changeset.errors)}", state}
                 _ ->
-                  changeset = Betunfair.Bet.changeset(bet, %{remaining_stake: 0})
+                  changeset = Betunfair.Bet.changeset(bet, %{remaining_stake: 0, status: "cancelled"})
                   case Betunfair.Repo.update(changeset) do
                     {:ok, bet} ->
-                      IO.puts("Bet updated successfully: #{inspect(bet)}")
-                      #TODO: end the bet process because it has been cancelled?
-                      #pid = Process.whereis(:"bet_#{bet_id}")
-                      #Process.exit(pid, :normal)
                       {:reply, {:ok, bet}, state}
                     {:error, changeset} ->
                       {:error, "Could not update the bet with id #{bet_id}; #{inspect(changeset.errors)}", state}
@@ -326,7 +384,7 @@ defmodule Betunfair.Bet do
         _bet ->
           case GenServer.call(:"bet_#{id}", {:bet_cancel, id}) do
             {:ok, _bets} ->
-              {:ok}
+              :ok
             {:error, reason} ->
               {:error, reason}
           end
@@ -338,7 +396,7 @@ defmodule Betunfair.Bet do
   @doc false
   def changeset(bet, attrs) do
     bet
-    |> cast(attrs, [:user_id, :market_id, :odds, :type, :original_stake, :remaining_stake])
+    |> cast(attrs, [:user_id, :market_id, :odds, :type, :original_stake, :remaining_stake, :status])
     |> validate_required([:user_id, :market_id, :odds, :type, :original_stake, :remaining_stake])
     |> assoc_constraint(:user)
     |> assoc_constraint(:market)
