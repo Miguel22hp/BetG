@@ -96,7 +96,7 @@ defmodule Betunfair.Market do
         _market ->
           # Ya existe un mercado con el mismo nombre, maneja este caso según tus necesidades
           # Por ejemplo, podrías devolver un error o lanzar una excepción
-          {:reply, {:error, "A market with that name already exists"}, state}
+          {:reply, {:error, "A market with the same name already exists"}, state}
       end
     end
 
