@@ -2,7 +2,7 @@ defmodule Betunfair.UserTest do
   use Betunfair.DataCase, async: false
 
   setup do
-    Betunfair.User.SupervisorUser.start_link()
+    Betunfair.User.SupervisorUser.start_link(:a)
 
     Ecto.Adapters.SQL.Sandbox.checkout(Betunfair.Repo)
     # Permitir la conexión de sandbox para el proceso del GenServer
