@@ -1,5 +1,5 @@
 defmodule Betunfair.UserTest do
-  use Betunfair.DataCase, async: true
+  use Betunfair.DataCase, async: false
 
   setup do
     Betunfair.User.SupervisorUser.start_link()
