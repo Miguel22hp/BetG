@@ -3,6 +3,7 @@ defmodule Betunfair.Market do
   import Ecto.Changeset
   alias Betunfair.Matched
   alias Betunfair.Bet
+  require Logger
 
   schema "markets" do
     field :description, :string
@@ -61,10 +62,12 @@ defmodule Betunfair.Market do
   end
 
   defmodule GestorMarket do
+    require Logger
     use GenServer
 
     def start_link([]) do
       GenServer.start_link(__MODULE__, [], name: :market_gestor)
+
     end
 
     def init(args) do
@@ -77,6 +80,7 @@ defmodule Betunfair.Market do
           # No hay ningún mercado con el mismo nombre, puedes proceder a crear el mercado
           # Aquí iría la lógica para crear el mercado
           case Betunfair.Market.GestorMarket.add_child_operation(name, description) do
+
             {:ok, market_id} ->
               # Create from GestorBet a SupervisorMarketBet process
               case Betunfair.Bet.GestorBet.add_child_operation(market_id) do
@@ -99,6 +103,7 @@ defmodule Betunfair.Market do
           {:reply, {:error, "A market with that name already exists"}, state}
       end
     end
+
 
     def add_child_operation(name, description) do
       case insert_market(name, description) do
@@ -127,6 +132,7 @@ defmodule Betunfair.Market do
       end
     end
 
+
     def handle_call({:market_list}, _from, state) do
       markets = Betunfair.Repo.all(Betunfair.Market)
       case markets do
@@ -147,6 +153,7 @@ defmodule Betunfair.Market do
           active_markets = Enum.filter(markets, fn market -> market.status == "active" end)
           market_ids = Enum.map(active_markets, &(&1.id))
           {:reply, {:ok, market_ids}, state}
+
       end
     end
 
@@ -185,6 +192,7 @@ defmodule Betunfair.Market do
   defmodule OperationsMarket do
     use GenServer
     import Ecto.Query, only: [from: 2]
+    require Logger
     alias Betunfair.Repo
 
     def child_spec({:args, child_name, market_id}) do

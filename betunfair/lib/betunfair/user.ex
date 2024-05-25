@@ -1,6 +1,9 @@
 defmodule Betunfair.User do
   use Ecto.Schema
   import Ecto.Changeset
+  alias Betunfair.Repo
+  require Logger
+
 
   schema "users" do
     field :balance, :float
@@ -13,7 +16,7 @@ defmodule Betunfair.User do
   defmodule SupervisorUser do
     use Supervisor
 
-    def start_link() do
+    def start_link(_) do
       Supervisor.start_link(__MODULE__, [], name: :user_supervisor)
     end
 
@@ -62,6 +65,7 @@ defmodule Betunfair.User do
         {:error, reason} ->
           {:reply, {:error, reason}, state}
       end
+
     end
 
     def user_create(id , name) do
@@ -95,8 +99,6 @@ defmodule Betunfair.User do
           {:error, "User couldn't be inserted. The reason: #{inspect(changeset.errors)}"}
       end
     end
-
-
   end
 
 

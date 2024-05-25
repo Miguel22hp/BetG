@@ -4,7 +4,7 @@ defmodule Betunfair.Repo.Migrations.CreateUsers do
   def change do
     create table(:users) do
       add :id_users, :string
-      add :balance, :integer
+      add :balance, :float
       add :name, :string
 
       timestamps(type: :utc_datetime)
