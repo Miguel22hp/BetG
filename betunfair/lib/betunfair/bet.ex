@@ -77,7 +77,7 @@ defmodule Betunfair.Bet do
         {:ok, _pid} ->
           {:reply, {:ok}, state}
         {:error, reason} ->
-          {:reply, {:error, reason, "ERROR AL CREAR EL HIJO"}, state}
+          {:reply, {:error, reason}, state}
       end
 
     end

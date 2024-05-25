@@ -37,9 +37,7 @@ defmodule Betunfair.User do
 
     def createProcessUser(user) do
       child_name = :"user_#{user.id}"
-      IO.puts("Creando proceso #{child_name}")
       if Process.whereis(child_name) == nil do
-        IO.puts("Dentro del if #{child_name}")
         Supervisor.start_child(:user_supervisor, {Betunfair.User.OperationsUser, {:args, child_name, user.id}})
       end
     end
@@ -54,12 +52,11 @@ defmodule Betunfair.User do
     end
 
     def init(args) do
-      IO.puts("Gestor de usuario creado con nombre")
       {:ok, args}
     end
 
     def handle_call({:user_create, id, name}, _from, state) do
-      case Betunfair.User.SupervisorUser.user_create(id, name) do
+      case Betunfair.User.GestorUser.add_child_operation(name, id) do
         {:ok, user_id} ->
           {:reply, {:ok, user_id}, state}
         {:error, reason} ->
@@ -70,13 +67,9 @@ defmodule Betunfair.User do
     def user_create(id , name) do
       case Betunfair.Repo.get_by(Betunfair.User, id_users: id) do
         nil ->
-          # No hay ningún usuario con el mismo ID, puedes proceder a crear el usuario
-          # Aquí iría la lógica para crear el usuario
-          add_child_operation(name, id)
+          GenServer.call(:user_gestor, {:user_create, id, name})
         _user ->
-          # Ya existe un usuario con el mismo ID, maneja este caso según tus necesidades
-          # Por ejemplo, podrías devolver un error o lanzar una excepción
-          {:error, "Ya existe un usuario con el mismo ID"}
+          {:error, "A user with the same ID already exists"}
       end
     end
 
@@ -99,7 +92,7 @@ defmodule Betunfair.User do
         {:ok, user} ->
           {:ok, user}
         {:error, changeset} ->
-          {:error, "No se pudo insertar el usuario: #{inspect(changeset.errors)}"}
+          {:error, "User couldn't be inserted. The reason: #{inspect(changeset.errors)}"}
       end
     end
 
@@ -124,7 +117,6 @@ defmodule Betunfair.User do
 
 
     def start_link({:args, name, user_id}) do
-      IO.puts("Creando proceso en  OperationsUser #{name}")
       GenServer.start_link(__MODULE__,{user_id} , name: name)
     end
 
@@ -143,7 +135,7 @@ defmodule Betunfair.User do
 
     def deposit(user_id, amount, user) do
       if amount <= 0 do
-        {:error, "La cantidad a depositar debe ser mayor a 0"}
+        {:error, "The amount you need to deposit must be greater than 0"}
       else
         new_balance = user.balance + amount
         changeset = Betunfair.User.changeset(user, %{balance: new_balance})
@@ -151,7 +143,7 @@ defmodule Betunfair.User do
           {:ok, _user} ->
             {:ok, new_balance}
           {:error, changeset} ->
-            {:error, "No se pudo actualizar el usuario: #{inspect(changeset.errors)}"}
+            {:error, "User couldn't be updated. The reason: #{inspect(changeset.errors)}"}
         end
 
       end
@@ -168,18 +160,18 @@ defmodule Betunfair.User do
 
     def withdraw(user_id, amount, user) do
       if amount <= 0 do
-        {:error, "La cantidad a retirar debe ser mayor a 0"}
+        {:error, "The amount you need to retire must be greater than 0"}
       else
         new_balance = user.balance - amount
         if new_balance < 0 do
-          {:error, "No tienes suficiente saldo para retirar esa cantidad"}
+          {:error, "You don't have enough balance to withdraw that amount"}
         else
           changeset = Betunfair.User.changeset(user, %{balance: new_balance})
           case Betunfair.Repo.update(changeset) do
             {:ok, _user} ->
               {:ok, new_balance}
             {:error, changeset} ->
-              {:error, "No se pudo actualizar el usuario: #{inspect(changeset.errors)}"}
+              {:error, "User couldn't be updated. The reason: #{inspect(changeset.errors)}"}
           end
         end # if new_balance < 0
       end # if amount <= 0
@@ -189,7 +181,7 @@ defmodule Betunfair.User do
 
       case Betunfair.Repo.get(Betunfair.User, id) do
         nil ->
-          {:reply, {:error, "No se encontró el usuario"}, user_id}
+          {:reply, {:error, "User was not found"}, user_id}
         user ->
           {:reply, user, user_id}
       end
@@ -207,26 +199,23 @@ defmodule Betunfair.User do
 
     #--- Client functions ---
     def user_deposit(id, amount) do
-      IO.puts(:"Deposito en user_#{id} de #{amount}")
       case Betunfair.Repo.get(Betunfair.User, id) do
         nil ->
-          {:error, "No se encontró el usuario"}
+          {:error, "User was not found"}
         user ->
           case GenServer.call(:"user_#{id}", {:deposit, amount, id, user}) do
             {:ok, new_balance} ->
               :ok
             {:error, reason} ->
-              IO.puts("Error en deposito, la razón es #{reason}")
               {:error, reason}
           end
       end
     end
 
     def user_withdraw(id, amount) do
-      #IO.puts(:"user_#{id}")
       case Betunfair.Repo.get(Betunfair.User, id) do
         nil ->
-          {:error, "No se encontró el usuario"}
+          {:error, "User was not found"}
         user ->
           case GenServer.call(:"user_#{id}", {:withdraw, amount, id, user}) do
             {:ok, new_balance} ->
@@ -238,10 +227,9 @@ defmodule Betunfair.User do
     end
 
     def user_get(id) do
-      #IO.puts(:"user_#{id}")
       case Betunfair.Repo.get(Betunfair.User, id) do
         nil ->
-          {:error, "No se encontró el usuario"}
+          {:error, "User was not found"}
         user ->
           case GenServer.call(:"user_#{id}", {:get, id}) do
             user ->
@@ -259,7 +247,7 @@ defmodule Betunfair.User do
     def user_bets(id) do
       case Betunfair.Repo.get(Betunfair.User, id) do
         nil ->
-          {:error, "No se encontró el usuario"}
+          {:error, "User was not found"}
         user ->
           case GenServer.call(:"user_#{id}", {:bet, id}) do
             {:ok, bet_ids} ->
