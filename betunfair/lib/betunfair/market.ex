@@ -100,7 +100,7 @@ defmodule Betunfair.Market do
         _market ->
           # Ya existe un mercado con el mismo nombre, maneja este caso según tus necesidades
           # Por ejemplo, podrías devolver un error o lanzar una excepción
-          {:reply, {:error, "A market with that name already exists"}, state}
+          {:reply, {:error, "A market with the same name already exists"}, state}
       end
     end
 
@@ -321,7 +321,7 @@ defmodule Betunfair.Market do
     end
 
     def handle_call({:market_settle, market_id, market, result}, _from, state) do
-      if market.status == "cancel" or market.status == "cancel" or market.status == "true" or market.status == "false"do
+      if market.status == "cancel" or market.status == "true" or market.status == "false" do
         {:reply, {:error, "Market can not settle"}, state}
       else
         changeset = Betunfair.Market.changeset(market, %{status: to_string(result)})
@@ -364,7 +364,7 @@ defmodule Betunfair.Market do
               {:reply, {:error, "Some deposits failed"}, state}
             end
           {:error, changeset} ->
-            {:reply, {:error, "Market could not be cancelled"}, state}
+            {:reply, {:error, "Market could not be settled"}, state}
         end
       end
       #Obtengo todos los match del market. Para ello, consigo la lista de bets matcheadas y veo su market_id
@@ -407,17 +407,26 @@ defmodule Betunfair.Market do
         nil ->
           {:error, "Market was not found"}
         market ->
-          case GenServer.call(:"market_#{market_id}", {:market_freeze, market_id, market}) do
-            :ok ->
-              case GenServer.call(:"market_#{market_id}", {:market_settle, market_id, market, result}) do
-                :ok ->
-                  :ok
-                {:error, reason} ->
-                  {:error, reason}
-              end
-            {:error, reason} ->
-              {:error, reason}
-          end
+          if (market.status != "frozen") do
+            case GenServer.call(:"market_#{market_id}", {:market_freeze, market_id, market}) do
+              :ok ->
+                case GenServer.call(:"market_#{market_id}", {:market_settle, market_id, market, result}) do
+                  :ok ->
+                    :ok
+                  {:error, reason} ->
+                    {:error, reason}
+                end
+              {:error, reason} ->
+                {:error, reason}
+            end
+          else
+            case GenServer.call(:"market_#{market_id}", {:market_settle, market_id, market, result}) do
+              :ok ->
+                :ok
+              {:error, reason} ->
+                {:error, reason}
+            end
+        end
 
       end
     end
