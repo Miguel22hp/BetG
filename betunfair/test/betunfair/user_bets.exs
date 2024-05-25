@@ -99,5 +99,22 @@ defmodule Betunfair.UserTest do
       end
   end
 
+  describe "User Get Test: " do
+    test "get a user", context do
+      {:ok, user_id} = Betunfair.User.GestorUser.user_create("1", "User 1")
+      process_name = :"user_#{user_id}" # Construye el átomo correctamente
+      Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
+
+      assert Betunfair.User.OperationsUser.user_get(user_id) == {:ok, %{name: "User 1",id: "1",balance: 0.0}}
+    end
+
+    test "get a non existing user" do
+      assert Betunfair.User.OperationsUser.user_get(1) == {:error, "User was not found"}
+    end
+  end
+
+
+
+
 
 end
