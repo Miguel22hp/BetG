@@ -17,7 +17,11 @@ defmodule Betunfair.Application do
       # Start a worker by calling: Betunfair.Worker.start_link(arg)
       # {Betunfair.Worker, arg},
       # Start to serve requests, typically the last entry
-      BetunfairWeb.Endpoint
+      BetunfairWeb.Endpoint,
+      Betunfair.User.SupervisorUser,
+      Betunfair.Bet.SupervisorBet,
+      Betunfair.Market.SupervisorMarket,
+      Betunfair.Matched.SupervisorMatched
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
