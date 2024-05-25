@@ -12,7 +12,7 @@ defmodule Betunfair.UserTest do
   end
 
 
-  describe "User Creation" do
+  describe "User Creation Test:" do
     test "create a user" do
       {:ok, user_id} = Betunfair.User.GestorUser.user_create("1", "User 1")
       assert {:ok, user_id+1} == Betunfair.User.GestorUser.user_create("2", "User 2")
@@ -35,7 +35,7 @@ defmodule Betunfair.UserTest do
   end
 
 
-  describe "User deposit Operation" do
+  describe "User Deposit Test: " do
 
     test "deposit a user", context do
       {:ok, user_id} = Betunfair.User.GestorUser.user_create("1", "User 1")
@@ -60,7 +60,43 @@ defmodule Betunfair.UserTest do
       assert Betunfair.User.OperationsUser.user_deposit(user_id, -100.0) ==  {:error, "The amount you need to deposit must be greater than 0"}
 
     end
+  end
 
+
+  describe "User Withdraw Test: " do
+
+      test "withdraw a user", context do
+        {:ok, user_id} = Betunfair.User.GestorUser.user_create("1", "User 1")
+        process_name = :"user_#{user_id}" # Construye el átomo correctamente
+        Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
+
+        assert Betunfair.User.OperationsUser.user_deposit(user_id, 100.0) == :ok
+        assert Betunfair.User.OperationsUser.user_get(user_id) == {:ok, %{name: "User 1",id: "1",balance: 100.0}}
+        assert Betunfair.User.OperationsUser.user_withdraw(user_id, 50.0) == :ok
+        assert Betunfair.User.OperationsUser.user_get(user_id) == {:ok, %{name: "User 1",id: "1",balance: 50.0}}
+      end
+
+      test "withdraw in a non existing user" do
+        assert Betunfair.User.OperationsUser.user_withdraw(1, 100.0) == {:error, "User was not found"}
+      end
+
+      test "withdraw a negative number in your account" do
+        {:ok, user_id} = Betunfair.User.GestorUser.user_create("1", "User 1")
+        process_name = :"user_#{user_id}" # Construye el átomo correctamente
+        Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
+
+        assert Betunfair.User.OperationsUser.user_withdraw(user_id, -100.0) ==  {:error, "The amount you need to withdraw must be greater than 0"}
+
+      end
+
+      test "withdraw a number greater than the balance in your account" do
+        {:ok, user_id} = Betunfair.User.GestorUser.user_create("1", "User 1")
+        process_name = :"user_#{user_id}" # Construye el átomo correctamente
+        Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
+
+        assert Betunfair.User.OperationsUser.user_withdraw(user_id, 100.0) ==  {:error, "You don't have enough balance to withdraw that amount"}
+
+      end
   end
 
 

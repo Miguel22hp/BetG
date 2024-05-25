@@ -160,7 +160,7 @@ defmodule Betunfair.User do
 
     def withdraw(user_id, amount, user) do
       if amount <= 0 do
-        {:error, "The amount you need to retire must be greater than 0"}
+        {:error, "The amount you need to withdraw must be greater than 0"}
       else
         new_balance = user.balance - amount
         if new_balance < 0 do
