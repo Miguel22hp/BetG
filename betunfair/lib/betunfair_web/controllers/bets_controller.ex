@@ -23,6 +23,7 @@ defmodule BetunfairWeb.BetsController do
   """
   @spec bets(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def bets(conn, %{"id" => market_id}) do
+    user_id = get_session(conn, :user_id)
     case OperationsMarket.market_get(market_id) do
       {:ok, market} ->
         case OperationsMarket.market_bets(market_id) do
@@ -39,6 +40,7 @@ defmodule BetunfairWeb.BetsController do
               market_id: market_id,
               market: market,
               bets: bets,
+              user_id: user_id,
               csrf_token: Plug.CSRFProtection.get_csrf_token()
             )
 
@@ -62,7 +64,7 @@ defmodule BetunfairWeb.BetsController do
 
   ## Parameters:
     - `conn`: HTTP connection.
-    - `%{"market_id" => market_id, "type" => type, "amount" => amount, "odds" => odds, "user_id" => user_id}`: URL parameters containing the market ID, bet type, amount, odds, and user ID.
+    - `%{"market_id" => market_id, "type" => type, "amount" => amount, "odds" => odds}`: URL parameters containing the market ID, bet type, amount, and odds.
 
   ## Actions:
     - Calls `GestorMarketBet.bet_lay/4` or `GestorMarketBet.bet_back/4` to create the bet.
@@ -73,26 +75,27 @@ defmodule BetunfairWeb.BetsController do
     - `Plug.Conn.t()`: The updated connection.
   """
   @spec create_bet(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create_bet(conn, %{"market_id" => market_id, "type" => type, "amount" => amount, "odds" => odds, "user_id" => user_id}) do
+  def create_bet(conn, %{"market_id" => market_id, "type" => type, "amount" => amount, "odds" => odds} = params) do
     amount = String.to_float(amount)
     odds = String.to_float(odds)
 
     result =
       case type do
-        "lay" -> GestorMarketBet.bet_lay(user_id, market_id, amount, odds)
-        "back" -> GestorMarketBet.bet_back(user_id, market_id, amount, odds)
+        "lay" -> GestorMarketBet.bet_lay(1, market_id, amount, odds)
+        "back" -> GestorMarketBet.bet_back(1, market_id, amount, odds)
+        _ -> {:error, "Invalid bet type"}
       end
 
     case result do
       {:ok, _bet_id} ->
         conn
         |> put_flash(:info, "Bet successfully created.")
-        |> redirect(to: "/markets/#{market_id}/view")
+        |> redirect(to: "/markets")
 
       {:error, reason} ->
         conn
         |> put_flash(:error, "Failed to create bet: #{reason}")
-        |> redirect(to: "/markets/#{market_id}/view")
+        |> redirect(to: "/markets")
     end
   end
 end

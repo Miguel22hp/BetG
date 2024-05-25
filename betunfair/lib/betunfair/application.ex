@@ -20,7 +20,8 @@ defmodule Betunfair.Application do
       BetunfairWeb.Endpoint,
       Betunfair.User.SupervisorUser,
       Betunfair.Bet.SupervisorBet,
-      Betunfair.Market.SupervisorMarket
+      Betunfair.Market.SupervisorMarket,
+      Betunfair.Matched.SupervisorMatched
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

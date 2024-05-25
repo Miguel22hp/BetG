@@ -228,6 +228,7 @@ defmodule Betunfair.Bet do
 
   defmodule OperationsBet do
     import Ecto.Query, only: [from: 2]
+    alias ElixirSense.Log
     alias Betunfair.Bet
     use GenServer
 
@@ -277,6 +278,7 @@ defmodule Betunfair.Bet do
         _bet ->
           case GenServer.call(:"bet_#{id}", {:bet_get, id}) do
             {:ok, bet} ->
+              Logger.info(bet)
               case bet.status do
                 "active" ->
                   case Betunfair.Repo.get(Betunfair.Market, bet.market_id) do
