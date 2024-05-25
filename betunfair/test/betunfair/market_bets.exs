@@ -270,7 +270,7 @@ defmodule Betunfair.MarketTest do
 
   end
 
-  describe "Market Pending Bets: " do
+  describe "Market Pending Bets Test: " do
 
     test "Market obtain bets of a market" do
       {:ok, market_id} = Betunfair.Market.GestorMarket.market_create("Market 1", "A test market")
@@ -360,7 +360,7 @@ defmodule Betunfair.MarketTest do
 
   end
 
-  describe "Market Match: " do
+  describe "Market Match Test: " do
 
     test "Match a Market" do
       {:ok, market_id} = Betunfair.Market.GestorMarket.market_create("Market 1", "A test market")
@@ -410,6 +410,60 @@ defmodule Betunfair.MarketTest do
 
     test "Match a non existing Market" do
       assert Betunfair.Market.OperationsMarket.market_match(1) == {:error, "Market was not found"}
+    end
+  end
+
+  describe "Market Get Test: " do
+    test "Get a Market" do
+      {:ok, market_id} = Betunfair.Market.GestorMarket.market_create("Market 1", "A test market")
+      process_name = :"market_#{market_id}" # Construye el átomo correctamente
+      Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
+
+      assert Betunfair.Market.OperationsMarket.market_get(market_id) == {:ok, %{name: "Market 1", description: "A test market",status: :active}}
+    end
+
+    test "Get a non existing Market" do
+      assert Betunfair.Market.OperationsMarket.market_get(1) == {:error, "Market was not found"}
+    end
+
+    test "Get a Market that is cancelled" do
+      {:ok, market_id} = Betunfair.Market.GestorMarket.market_create("Market 1", "A test market")
+      process_name = :"market_#{market_id}" # Construye el átomo correctamente
+      Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
+
+      assert Betunfair.Market.OperationsMarket.market_cancel(market_id) == :ok
+      assert Betunfair.Market.OperationsMarket.market_get(market_id) == {:ok, %{name: "Market 1", description: "A test market",status: :cancelled}}
+    end
+
+    test "Get a Market that is frozen" do
+      {:ok, market_id} = Betunfair.Market.GestorMarket.market_create("Market 1", "A test market")
+      process_name = :"market_#{market_id}" # Construye el átomo correctamente
+      Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
+
+      assert Betunfair.Market.OperationsMarket.market_freeze(market_id) == :ok
+      assert Betunfair.Market.OperationsMarket.market_get(market_id) == {:ok, %{name: "Market 1", description: "A test market",status: :frozen}}
+    end
+
+    test "Get a Market that is settled to true" do
+      {:ok, market_id} = Betunfair.Market.GestorMarket.market_create("Market 1", "A test market")
+      process_name = :"match_#{market_id}" # Construye el átomo correctamente
+      Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
+      process_name = :"market_#{market_id}" # Construye el átomo correctamente
+      Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
+
+      assert Betunfair.Market.OperationsMarket.market_settle(market_id, true) == :ok
+      assert Betunfair.Market.OperationsMarket.market_get(market_id) == {:ok, %{name: "Market 1", description: "A test market",status: {:settled, true}}}
+    end
+
+    test "Get a Market that is settled to false" do
+      {:ok, market_id} = Betunfair.Market.GestorMarket.market_create("Market 1", "A test market")
+      process_name = :"match_#{market_id}" # Construye el átomo correctamente
+      Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
+      process_name = :"market_#{market_id}" # Construye el átomo correctamente
+      Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
+
+      assert Betunfair.Market.OperationsMarket.market_settle(market_id, false) == :ok
+      assert Betunfair.Market.OperationsMarket.market_get(market_id) == {:ok, %{name: "Market 1", description: "A test market",status: {:settled, false}}}
     end
   end
 
