@@ -1,7 +1,6 @@
 defmodule Betunfair.User do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Betunfair.Repo
   require Logger
 
 
@@ -30,19 +29,23 @@ defmodule Betunfair.User do
       state
     end
 
+    @spec load_user() :: :ok
     def load_user() do
       users = Betunfair.Repo.all(Betunfair.User)
       for user <- users do
         createProcessUser(user)
         Process.sleep(100) # Adds 100 ms delay between process creation sothey do not select the same PID
       end
+      :ok
     end
 
+    @spec createProcessUser(Betunfair.User.t) :: :ok
     def createProcessUser(user) do
       child_name = :"user_#{user.id}"
       if Process.whereis(child_name) == nil do
         Supervisor.start_child(:user_supervisor, {Betunfair.User.OperationsUser, {:args, child_name, user.id}})
       end
+      :ok
     end
 
   end
@@ -58,6 +61,7 @@ defmodule Betunfair.User do
       {:ok, args}
     end
 
+    @spec handle_call({:user_create, id :: String.t(), name :: String.t()}, GenServer.t, any) :: {:reply, {:ok, Integer.t()}, any} | {:reply, {:error, String.t()}, any}
     def handle_call({:user_create, id, name}, _from, state) do
       case Betunfair.User.GestorUser.add_child_operation(name, id) do
         {:ok, user_id} ->
@@ -68,6 +72,7 @@ defmodule Betunfair.User do
 
     end
 
+    @spec user_create(id :: String.t(), name :: String.t()) :: {:ok, Integer.t()} | {:error, String.t()}
     def user_create(id , name) do
       case Betunfair.Repo.get_by(Betunfair.User, id_users: id) do
         nil ->
@@ -77,6 +82,7 @@ defmodule Betunfair.User do
       end
     end
 
+    @spec add_child_operation(name :: String.t(), id :: String.t()) :: {:ok, Integer.t()} | {:error, String.t()}
     def add_child_operation(name, id) do
       case insert_user(id, name) do
         {:ok, user} ->
@@ -88,6 +94,7 @@ defmodule Betunfair.User do
       end
     end
 
+    @spec insert_user(id :: String.t(), name :: String.t()) :: {:ok, Betunfair.User.t()} | {:error, String.t()}
     def insert_user(id, name) do
       changeset = Betunfair.User.changeset(%Betunfair.User{}, %{id_users: id, name: name, balance: 0})
 
@@ -126,6 +133,7 @@ defmodule Betunfair.User do
       {:ok, user_id}
     end
 
+    @spec handle_call({:deposit, amount :: Float.t(), id :: Integer.t(), user :: Betunfair.User.t()}, GenServer.t, any) :: {:reply, {:ok, Float.t()}, any} | {:reply, {:error, String.t()}, any}
     def handle_call({:deposit, amount, id, user}, _from, user_id) do
       case deposit(id, amount, user) do
         {:ok, new_balance} ->
@@ -135,7 +143,8 @@ defmodule Betunfair.User do
       end
     end
 
-    def deposit(user_id, amount, user) do
+    @spec deposit(user_id :: Integer.t(), amount :: Float.t(), user :: Betunfair.User.t()) :: {:ok, Float.t()} | {:error, String.t()}
+    def deposit(_user_id, amount, user) do
       if amount <= 0 do
         {:error, "The amount you need to deposit must be greater than 0"}
       else
@@ -151,6 +160,7 @@ defmodule Betunfair.User do
       end
     end
 
+    @spec handle_call({:withdraw, amount :: Float.t(), id :: Integer.t(), user :: Betunfair.User.t()}, GenServer.t, any) :: {:reply, {:ok, Float.t()}, any} | {:reply, {:error, String.t()}, any}
     def handle_call({:withdraw, amount, id, user}, _from, user_id) do
       case withdraw(id, amount, user) do
         {:ok, new_balance} ->
@@ -160,7 +170,8 @@ defmodule Betunfair.User do
       end
     end
 
-    def withdraw(user_id, amount, user) do
+    @spec withdraw(user_id :: Integer.t(), amount :: Float.t(), user :: Betunfair.User.t()) :: {:ok, Float.t()} | {:error, String.t()}
+    def withdraw(_user_id, amount, user) do
       if amount <= 0 do
         {:error, "The amount you need to withdraw must be greater than 0"}
       else
@@ -177,8 +188,9 @@ defmodule Betunfair.User do
           end
         end # if new_balance < 0
       end # if amount <= 0
-    end # function withdraw
+    end
 
+    @spec handle_call({:get, id :: Integer.t()}, GenServer.t, any) :: {:reply, Betunfair.User.t(), any} | {:reply, {:error, String.t()}, any}
     def handle_call({:get, id}, _from, user_id) do
 
       case Betunfair.Repo.get(Betunfair.User, id) do
@@ -189,6 +201,7 @@ defmodule Betunfair.User do
       end
     end
 
+    @spec handle_call({:bet, id :: Integer.t()}, GenServer.t, any) :: {:reply, {:ok, [Integer.t()]}, any} | {:reply, {:error, String.t()}, any}
     def handle_call({:bet, id}, _from, state) do
       query = from b in Betunfair.Bet, where: b.user_id == ^id
       bets = Betunfair.Repo.all(query)
@@ -200,6 +213,7 @@ defmodule Betunfair.User do
 
 
     #--- Client functions ---
+    @spec user_deposit(id :: Integer.t(), amount :: Float.t()) :: :ok | {:error, String.t()}
     def user_deposit(id, amount) do
       case Betunfair.Repo.get(Betunfair.User, id) do
         nil ->
@@ -214,6 +228,7 @@ defmodule Betunfair.User do
       end
     end
 
+    @spec user_withdraw(id :: Integer.t(), amount :: Float.t()) :: :ok | {:error, String.t()}
     def user_withdraw(id, amount) do
       case Betunfair.Repo.get(Betunfair.User, id) do
         nil ->
@@ -228,6 +243,7 @@ defmodule Betunfair.User do
       end
     end
 
+    @spec user_get(id :: Integer.t()) :: {:ok, %{name: String.t(), id: Integer.t(), balance: Float.t()}} | {:error, String.t()}
     def user_get(id) do
       case Betunfair.Repo.get(Betunfair.User, id) do
         nil ->
@@ -246,11 +262,12 @@ defmodule Betunfair.User do
       end
     end
 
+    @spec user_bets(id :: Integer.t()) :: {:ok, Enumerable.t(Integer.t())} | {:error, String.t()}
     def user_bets(id) do
       case Betunfair.Repo.get(Betunfair.User, id) do
         nil ->
           {:error, "User was not found"}
-        user ->
+        _user ->
           case GenServer.call(:"user_#{id}", {:bet, id}) do
             {:ok, bet_ids} ->
               bet_ids

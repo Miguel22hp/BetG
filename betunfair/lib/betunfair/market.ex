@@ -28,6 +28,7 @@ defmodule Betunfair.Market do
       state
     end
 
+    @spec load_market() :: :ok
     def load_market() do
       markets = Betunfair.Repo.all(Betunfair.Market)
       for market <- markets do
@@ -36,8 +37,10 @@ defmodule Betunfair.Market do
         createProcessMatched(market.id)
         Process.sleep(100) # Adds 100 ms delay between process creation sothey do not select the same PID
       end
+      :ok
     end
 
+    @spec createProcessMarket(market :: Betunfair.Market.t()) :: {nil | {:error, any()} | {:ok, :undefined | pid()} | {:ok, :undefined | pid(), any()}}
     def createProcessMarket(market) do
       child_name = :"market_#{market.id}"
       if Process.whereis(child_name) == nil do
@@ -45,6 +48,7 @@ defmodule Betunfair.Market do
       end
     end
 
+    @spec createProcessBetSupervisor(market_id ::  integer) :: {nil | {:error, any()} | {:ok, :undefined | pid()} | {:ok, :undefined | pid(), any()}}
     def createProcessBetSupervisor(market_id) do
       child_name = :"supervisor_bet_market_#{market_id}"
       if Process.whereis(child_name) == nil do
@@ -53,6 +57,7 @@ defmodule Betunfair.Market do
       end
     end
 
+    @spec createProcessMatched(market_id ::  integer) :: {nil | {:error, any()} | {:ok, :undefined | pid()} | {:ok, :undefined | pid(), any()}}
     def createProcessMatched(market_id) do
       child_name = :"match_#{market_id}"
       if Process.whereis(child_name) == nil do
@@ -74,6 +79,7 @@ defmodule Betunfair.Market do
       {:ok, args}
     end
 
+    @spec handle_call({:market_create, name :: String.t(), description :: String.t()}, GenServer.from(), any) :: {{:reply, {:ok, market_id ::  integer}, any} | {:reply, {:error, reason :: String.t()}, any}}
     def handle_call({:market_create, name, description}, _from, state) do
       case Betunfair.Repo.get_by(Betunfair.Market, name: name) do
         nil ->
@@ -104,7 +110,7 @@ defmodule Betunfair.Market do
       end
     end
 
-
+    @spec add_child_operation(name :: String.t(), description :: String.t()) :: {{:ok, market_id ::  integer} | {:error, reason :: String.t()}}
     def add_child_operation(name, description) do
       case insert_market(name, description) do
         {:ok, market} ->
@@ -121,7 +127,7 @@ defmodule Betunfair.Market do
       end
     end
 
-
+    @spec insert_market(name :: String.t(), description :: String.t()) :: {{:ok, market :: Betunfair.Market.t()} | {:error, reason :: String.t()}}
     def insert_market(name, description) do
       changeset = Betunfair.Market.changeset(%Betunfair.Market{}, %{name: name, description: description, status: "active"})
       case Betunfair.Repo.insert(changeset) do
@@ -132,7 +138,7 @@ defmodule Betunfair.Market do
       end
     end
 
-
+    @spec handle_call({:market_list}, GenServer.from(), any) :: {:reply, {:ok, market_ids :: Enumerable.t( integer)}, any}
     def handle_call({:market_list}, _from, state) do
       markets = Betunfair.Repo.all(Betunfair.Market)
       case markets do
@@ -144,6 +150,7 @@ defmodule Betunfair.Market do
       end
     end
 
+    @spec handle_call({:market_list_active}, GenServer.from(), any) :: {:reply, {:ok, market_ids :: Enumerable.t( integer)}, any}
     def handle_call({:market_list_active}, _from, state) do
       markets = Betunfair.Repo.all(Betunfair.Market)
       case markets do
@@ -157,7 +164,7 @@ defmodule Betunfair.Market do
       end
     end
 
-
+    @spec market_create(name :: String.t(), description :: String.t()) :: {{:ok, market_id ::  integer} | {:error, reason :: String.t()}}
     def market_create(name, description) do
       case GenServer.call(:market_gestor, {:market_create, name, description}) do
         {:ok, market_id} ->
@@ -167,6 +174,7 @@ defmodule Betunfair.Market do
       end
     end
 
+    @spec market_list() :: {{:ok, market_ids :: Enumerable.t( integer)} | {:error, reason :: String.t()}}
     def market_list() do
       case GenServer.call(:market_gestor, {:market_list}) do
         {:ok, ids} ->
@@ -176,6 +184,7 @@ defmodule Betunfair.Market do
       end
     end
 
+    @spec market_list_active() :: {{:ok, market_ids :: Enumerable.t( integer)} | {:error, reason :: String.t()}}
     def market_list_active() do
       case GenServer.call(:market_gestor, {:market_list_active}) do
         {:ok, ids} ->
@@ -214,6 +223,7 @@ defmodule Betunfair.Market do
       {:ok, market_id}
     end
 
+    @spec handle_call({:market_bets, market_id ::  integer, market :: Betunfair.Market.t()}, GenServer.from(), any()) :: {:reply, {:ok, Enumerable.t( integer)}, any()}
     def handle_call({:market_bets, market_id, market}, _from, state) do
       query = from b in Betunfair.Bet, where: b.market_id == ^market_id
       bets = Betunfair.Repo.all(query)
@@ -222,7 +232,7 @@ defmodule Betunfair.Market do
       {:reply, {:ok, bet_ids}, state}
     end
 
-
+    @spec handle_call({:market_get, market_id ::  integer}, GenServer.from(), any()) :: {:reply, {:ok, Betunfair.Market.t()}, any()} | {:reply, {:error, any()}, any()}
     def handle_call({:market_get, market_id}, _from, state) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
@@ -232,6 +242,7 @@ defmodule Betunfair.Market do
       end
     end
 
+    @spec handle_call({:market_pending_backs, market_id ::  integer}, GenServer.from(), any()) :: {{:reply, {:ok, Enumerable.t( integer)}, any()} | {:reply, {:error, any()}, any()}}
     def handle_call({:market_pending_backs, market_id}, _from, state) do
       # All back bets from market_id with remaining_stake > 0
       query = from b in Betunfair.Bet, where: b.market_id == ^market_id and b.type == "back" and b.remaining_stake > 0.0, order_by: [asc: :odds]
@@ -241,7 +252,7 @@ defmodule Betunfair.Market do
       {:reply, {:ok, bets}, state}
     end
 
-
+    @spec handle_call({:market_pending_lays, market_id ::  integer}, GenServer.from(), any()) :: {{:reply, {:ok, Enumerable.t( integer)}, any()} | {:reply, {:error, any()}, any()}}
     def handle_call({:market_pending_lays, market_id}, _from, state) do
       # All lay bets from market_id with remaining_stake > 0
       query = from b in Betunfair.Bet, where: b.market_id == ^market_id and b.type == "lay" and b.remaining_stake > 0.0, order_by: [desc: :odds]
@@ -249,6 +260,7 @@ defmodule Betunfair.Market do
       {:reply, {:ok, bets}, state}
     end
 
+    @spec handle_call({:market_cancel, market_id ::  integer, market :: Betunfair.Market.t()}, GenServer.from(), any()) :: {{:reply, :ok, any()} | {:reply, {:error, any()}, any()}}
     def handle_call({:market_cancel, market_id, market}, _from, state) do
       #Check if the market is active
       if market.status != "active" do
@@ -286,6 +298,7 @@ defmodule Betunfair.Market do
 
     end
 
+    @spec handle_call({:market_freeze, market_id :: integer, market :: Betunfair.Market.t()}, GenServer.from(), any()) :: {{:reply, :ok, any()} | {:reply, {:error, any()}, any()}}
     def handle_call({:market_freeze, market_id, market}, _from, state) do
       if market.status != "active" do
         {:reply, {:error, "Market is not active"}, state}
@@ -320,6 +333,7 @@ defmodule Betunfair.Market do
       end
     end
 
+    @spec handle_call({:market_settle, market_id ::  integer, market :: Betunfair.Market.t(), result :: boolean()}, GenServer.from(), any()) :: {{:reply, :ok, any()} | {:reply, {:error, any()}, any()}}
     def handle_call({:market_settle, market_id, market, result}, _from, state) do
       if market.status == "cancel" or market.status == "true" or market.status == "false" do
         {:reply, {:error, "Market can not settle"}, state}
@@ -374,6 +388,7 @@ defmodule Betunfair.Market do
 
     end
 
+    @spec market_cancel(market_id ::  integer) :: {:ok| {:error, any()}}
     def market_cancel(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
@@ -388,6 +403,7 @@ defmodule Betunfair.Market do
       end
     end
 
+    @spec market_freeze(market_id ::  integer) :: {:ok| {:error, any()}}
     def market_freeze(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
@@ -402,6 +418,7 @@ defmodule Betunfair.Market do
       end
     end
 
+    @spec market_settle(market_id ::  integer, result :: boolean()) :: {:ok| {:error, any()}}
     def market_settle(market_id, result) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
@@ -431,6 +448,7 @@ defmodule Betunfair.Market do
       end
     end
 
+    @spec market_bets(market_id ::  integer) :: { {:ok, Enumerable.t({integer(),  integer})} | {:error, any()}}
     def market_bets(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
@@ -445,6 +463,7 @@ defmodule Betunfair.Market do
       end
     end
 
+    @spec market_get(market_id ::  integer) :: { {:ok, %{name: String.t(), description: String.t(), status: atom()}} | {:error, any()}}
     def market_get(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
@@ -479,6 +498,7 @@ defmodule Betunfair.Market do
       end
     end
 
+    @spec market_match(market_id ::  integer) :: { :ok | {:error, any()}}
     def market_match(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
@@ -493,6 +513,7 @@ defmodule Betunfair.Market do
       end
     end
 
+    @spec market_pending_backs(market_id ::  integer) :: { {:ok, Enumerable.t({float(),  integer})} | {:error, any()}}
     def market_pending_backs(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
@@ -507,6 +528,7 @@ defmodule Betunfair.Market do
       end
     end
 
+    @spec market_pending_lays(market_id ::  integer) :: { {:ok, Enumerable.t({float(),  integer})} | {:error, any()}}
     def market_pending_lays(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
