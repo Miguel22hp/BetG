@@ -29,7 +29,7 @@ defmodule Betunfair.UserTest do
     end
 
     test "create a user with the same id" do
-      Betunfair.User.GestorUser.user_create("1", "User 1") == {:ok, 1}
+      {:ok, _id} = Betunfair.User.GestorUser.user_create("1", "User 1")
       assert Betunfair.User.GestorUser.user_create("1", "User 1") == {:error, "A user with the same ID already exists"}
     end
   end
@@ -37,7 +37,7 @@ defmodule Betunfair.UserTest do
 
   describe "User Deposit Test: " do
 
-    test "deposit a user", context do
+    test "deposit a user" do
       {:ok, user_id} = Betunfair.User.GestorUser.user_create("1", "User 1")
       process_name = :"user_#{user_id}" # Construye el átomo correctamente
       Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
@@ -65,7 +65,7 @@ defmodule Betunfair.UserTest do
 
   describe "User Withdraw Test: " do
 
-      test "withdraw a user", context do
+      test "withdraw a user" do
         {:ok, user_id} = Betunfair.User.GestorUser.user_create("1", "User 1")
         process_name = :"user_#{user_id}" # Construye el átomo correctamente
         Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
@@ -100,7 +100,7 @@ defmodule Betunfair.UserTest do
   end
 
   describe "User Get Test: " do
-    test "get a user", context do
+    test "get a user" do
       {:ok, user_id} = Betunfair.User.GestorUser.user_create("1", "User 1")
       process_name = :"user_#{user_id}" # Construye el átomo correctamente
       Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)

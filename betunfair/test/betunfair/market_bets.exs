@@ -34,7 +34,7 @@ defmodule Betunfair.MarketTest do
     end
 
     test "create a market with the same id" do
-      {:ok, id} = Betunfair.Market.GestorMarket.market_create("Market 1", "A test market")
+      {:ok, _id} = Betunfair.Market.GestorMarket.market_create("Market 1", "A test market")
       assert Betunfair.Market.GestorMarket.market_create("Market 1", "A test market") == {:error, "A market with the same name already exists"}
     end
   end
@@ -106,7 +106,7 @@ defmodule Betunfair.MarketTest do
 
 
       assert Betunfair.User.OperationsUser.user_deposit(user_id, 100.0) == :ok
-      {:ok, bet_id} = Betunfair.Bet.GestorMarketBet.bet_back(user_id,market_id, 100.0, 5)
+      {:ok, _bet_id} = Betunfair.Bet.GestorMarketBet.bet_back(user_id,market_id, 100.0, 5)
       assert Betunfair.User.OperationsUser.user_get(user_id) == {:ok, %{name: "User 1",id: "1",balance: 0}}
       assert Betunfair.Market.OperationsMarket.market_cancel(market_id) == :ok
       assert Betunfair.User.OperationsUser.user_get(user_id) == {:ok, %{name: "User 1",id: "1",balance: 100.0}}
@@ -218,7 +218,7 @@ defmodule Betunfair.MarketTest do
 
 
       assert Betunfair.User.OperationsUser.user_deposit(user_id, 100.0) == :ok
-      {:ok, bet_id} = Betunfair.Bet.GestorMarketBet.bet_back(user_id,market_id, 100.0, 5)
+      {:ok, _bet_id} = Betunfair.Bet.GestorMarketBet.bet_back(user_id,market_id, 100.0, 5)
       assert Betunfair.User.OperationsUser.user_get(user_id) == {:ok, %{name: "User 1",id: "1",balance: 0}}
       assert Betunfair.Market.OperationsMarket.market_freeze(market_id) == :ok
       assert Betunfair.User.OperationsUser.user_get(user_id) == {:ok, %{name: "User 1",id: "1",balance: 100.0}}
