@@ -1,3 +1,24 @@
+<style>
+  /* Custom scrollbar styles */
+  ::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #2d3748;
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #4a5568;
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #718096;
+  }
+</style>
+
 <section class="w-full min-h-screen bg-black flex flex-col animate-fadeIn">
   <header class="px-4 sm:px-6 lg:px-8 bg-gray-900 text-white py-4">
     <div class="flex justify-between items-center">
@@ -9,15 +30,15 @@
     <section class="w-full p-4">
       <div class="flex items-center">
         <div class="w-1/4">
-          <img src="https://img.freepik.com/free-photo/handsome-confident-man-posing-against-white-wall_176420-32936.jpg" alt="Profile Picture" class="rounded-full w-full h-full object-cover">
+          <img src="https://img.freepik.com/free-photo/handsome-confident-man-posing-against-white-wall_176420-32936.jpg" alt={"Profile Picture of #{@user.name}"} class="rounded-full w-full h-full object-cover">
         </div>
         <div class="w-3/4 ml-4">
           <div class="bg-gray-800 rounded-lg p-4 overflow-auto">
             <div>
               <form action="/update_name" method="POST" class="mb-4">
-                <input type="hidden" name="_csrf_token" value="<%= @user.csrf_token %>">
+                <input type="hidden" name="_csrf_token" value={@user.csrf_token}>
                 <label for="name" class="block mb-2 text-white"><strong>Name:</strong></label>
-                <input type="text" id="name" name="name" value="<%= @user.name %>" class="bg-gray-700 text-white p-2 rounded" readonly>
+                <input type="text" id="name" name="name" value={@user.name} class="bg-gray-700 text-white p-2 rounded" readonly>
               </form>
             </div>
             <div class="flex justify-between items-center mt-4">
@@ -25,14 +46,14 @@
               <div class="flex items-center ml-4">
                 <span class="text-lg font-bold text-white mr-4">Available Balance: <strong>$<%= @user.balance %></strong></span>
                 <form action="/add_funds" method="POST" class="inline">
-                  <input type="hidden" name="_csrf_token" value="<%= @user.csrf_token %>">
-                  <input type="hidden" name="id" value="<%= @user.id %>">
+                  <input type="hidden" name="_csrf_token" value={@user.csrf_token}>
+                  <input type="hidden" name="id" value={@user.id}>
                   <input type="number" name="amount" value="20.00" step="0.01" class="bg-gray-700 text-white p-2 rounded" min="1">
                   <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded">Add Funds</button>
                 </form>
                 <form action="/remove_funds" method="POST" class="inline ml-4">
-                  <input type="hidden" name="_csrf_token" value="<%= @user.csrf_token %>">
-                  <input type="hidden" name="id" value="<%= @user.id %>">
+                  <input type="hidden" name="_csrf_token" value={@user.csrf_token}>
+                  <input type="hidden" name="id" value={@user.id}>
                   <input type="number" name="amount" value="20.00" step="0.01" class="bg-gray-700 text-white p-2 rounded" min="1">
                   <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded">Remove Funds</button>
                 </form>
@@ -58,11 +79,15 @@
                 <span class="block text-white">Status: 
                   <%= case bet.status do %>
                     <% :active -> %>
-                      <span class="text-blue-400 font-bold">Active</span>
+                      <span class="text-blue-400 font-bold"><%= bet.status %></span>
                     <% :cancelled -> %>
-                      <span class="text-red-400 font-bold">Cancelled</span>
+                      <span class="text-red-400 font-bold"><%= bet.status %></span>
+                    <% {:market_settled, true} -> %>
+                      <span class="text-gray-400 font-bold"> Win Back </span>
+                    <% {:market_settled, false} -> %>
+                      <span class="text-gray-400 font-bold"> Win Lay </span>
                     <% _ -> %>
-                      <span class="text-gray-400 font-bold">Unknown</span>
+                      <span class="text-gray-400 font-bold"><%= bet.status %></span>
                   <% end %>
                 </span>
               </div>
@@ -70,17 +95,17 @@
                 <span class="block text-white">Type: 
                   <%= case bet.bet_type do %>
                     <% "lay" -> %>
-                      <span class="text-blue-400 font-bold">Lay</span>
+                      <span class="text-blue-400 font-bold"><%= bet.bet_type %></span>
                     <% "back" -> %>
-                      <span class="text-purple-400 font-bold">Back</span>
+                      <span class="text-purple-400 font-bold"><%= bet.bet_type %></span>
                     <% _ -> %>
-                      <span class="text-gray-400 font-bold">Unknown</span>
+                      <span class="text-gray-400 font-bold"><%= bet.bet_type %></span>
                   <% end %>
                 </span>
                 <form action="/bets/cancel" method="POST" class="mt-2">
-                  <input type="hidden" name="_csrf_token" value="<%= @user.csrf_token %>">
-                  <input type="hidden" name="bet_id" value="<%= bet.bet_id %>">
-                  <input type="hidden" name="user_id" value="<%= @user.id %>">
+                  <input type="hidden" name="_csrf_token" value={@user.csrf_token}>
+                  <input type="hidden" name="bet_id" value={bet.bet_id}>
+                  <input type="hidden" name="user_id" value={@user.id}>
                   <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded">Cancel Bet</button>
                 </form>
               </div>

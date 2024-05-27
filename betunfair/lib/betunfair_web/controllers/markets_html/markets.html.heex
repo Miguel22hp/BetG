@@ -38,7 +38,7 @@
 
       <!-- Settled Markets (True) -->
       <section class="bg-gray-800 rounded-lg shadow-lg p-6 flex flex-col">
-        <h2 class="text-xl font-bold text-white mb-4">Lay wins</h2>
+        <h2 class="text-xl font-bold text-white mb-4">Back wins</h2>
         <div class="flex-1 overflow-y-auto">
           <%= if @settled_markets_true do %>
             <ul class="space-y-4">
@@ -50,7 +50,7 @@
                   </div>
                   <div class="mt-2">
                     <button class="bg-green-500 text-white font-bold py-2 px-4 rounded" disabled>
-                      Lay Win
+                      Back Win
                     </button>
                   </div>
                 </li>
@@ -64,7 +64,7 @@
 
       <!-- Settled Markets (False) -->
       <section class="bg-gray-800 rounded-lg shadow-lg p-6 flex flex-col">
-        <h2 class="text-xl font-bold text-white mb-4">Back Wins</h2>
+        <h2 class="text-xl font-bold text-white mb-4">Lay Wins</h2>
         <div class="flex-1 overflow-y-auto">
           <%= if @settled_markets_false do %>
             <ul class="space-y-4">
@@ -75,8 +75,8 @@
                     <p class="text-sm"><%= market.description %></p>
                   </div>
                   <div class="mt-2">
-                    <button class="bg-red-500 text-white font-bold py-2 px-4 rounded" disabled>
-                     Back Win
+                    <button class="bg-green-500 text-white font-bold py-2 px-4 rounded" disabled>
+                     Lay Win
                     </button>
                   </div>
                 </li>

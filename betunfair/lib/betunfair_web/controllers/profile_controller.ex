@@ -122,25 +122,25 @@ defmodule BetunfairWeb.ProfileController do
     end
   end
 
+  @doc false
+  @spec redirect_to_profile(Plug.Conn.t(), String.t(), String.t()) :: Plug.Conn.t()
   defp redirect_to_profile(conn, id, token) do
     case OperationsUser.user_get(id) do
       {:ok, user} ->
         case OperationsUser.user_bets(id) do
           bet_ids ->
+            # Fetch the details of each bet along with the market information
             bets = Enum.map(bet_ids, fn bet_id ->
               case OperationsBet.bet_get(bet_id) do
                 {:ok, bet} ->
                   case OperationsMarket.market_get(bet.market_id) do
-                    {:ok, market} ->
-                      Map.put(bet, :market, market)
-                      |> Map.put(:bet_id, bet_id)
-                      |> format_bet()
-                    {:error, _reason} -> format_bet(bet |> Map.put(:bet_id, bet_id))
+                    {:ok, market} -> Map.put(bet, :market, market) |> Map.put(:bet_id, bet_id)
+                    {:error, _reason} -> bet |> Map.put(:bet_id, bet_id)
                   end
                 {:error, _reason} -> nil
               end
             end)
-            |> Enum.filter(&(&1 != nil))
+            |> Enum.filter(&(&1 != nil)) # Remove invalid bets
 
             Logger.info("User retrieved successfully: #{inspect(user)}")
             render(conn, "profile.html", user: %{
@@ -162,10 +162,5 @@ defmodule BetunfairWeb.ProfileController do
         |> put_flash(:error, reason)
         |> redirect(to: "/")
     end
-  end
-
-  defp format_bet(bet) do
-    # Convert any complex structures into simpler representations
-    Map.update!(bet, :status, &Atom.to_string/1)
   end
 end
