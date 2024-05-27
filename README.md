@@ -81,3 +81,20 @@ execute the Phoenix app
 ```
 mix phx.server
 ```
+
+## Execute Tests
+
+For internal logic (bet, user, market and matched modules)
+```
+mix test test/betunfair/*
+```
+
+For web controllers
+```
+mix test test/betunfair_web/*
+```
+
+For everything
+```
+mix test
+```
