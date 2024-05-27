@@ -82,6 +82,10 @@
                       <span class="text-blue-400 font-bold"><%= bet.status %></span>
                     <% :cancelled -> %>
                       <span class="text-red-400 font-bold"><%= bet.status %></span>
+                    <% {:market_settled, true} -> %>
+                      <span class="text-gray-400 font-bold"> Win Back </span>
+                    <% {:market_settled, false} -> %>
+                      <span class="text-gray-400 font-bold"> Win Lay </span>
                     <% _ -> %>
                       <span class="text-gray-400 font-bold"><%= bet.status %></span>
                   <% end %>
