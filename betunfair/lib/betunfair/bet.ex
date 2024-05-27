@@ -34,7 +34,7 @@ defmodule Betunfair.Bet do
 
     # A SupervisorBet creates a SupervisorMarketBet process as a child of him when a market is created. -> ?
 
-    def load_bets() do
+    defp load_bets() do
       bets = Betunfair.Repo.all(Betunfair.Bet)
       for bet <- bets do
         createProcessBet(bet)
@@ -42,7 +42,7 @@ defmodule Betunfair.Bet do
       end
     end
 
-    def createProcessBet(bet) do
+    defp createProcessBet(bet) do
       child_name = :"bet_#{bet.id}"
       IO.puts("BET: creating process #{child_name}")
       if Process.whereis(child_name) == nil do
@@ -118,7 +118,6 @@ defmodule Betunfair.Bet do
   end
 
   defmodule GestorMarketBet do
-    alias ElixirSense.Log
     require Logger
     use GenServer
 
@@ -152,7 +151,7 @@ defmodule Betunfair.Bet do
       end
     end
 
-    #@spec bet_back(user_id :: user_id(), market_id :: market_id(), stake :: integer(), odds :: integer()) :: {:ok, bet_id()}
+    @spec bet_back(user_id :: integer, market_id :: integer, stake :: integer, odds :: integer) :: {:ok, integer}
     def bet_back(user_id, market_id, stake, odds) do
       process_name = :"gestor_bet_market_#{market_id}"
       GenServer.call(process_name, {:back_bet, user_id, market_id, stake, odds})
@@ -167,7 +166,7 @@ defmodule Betunfair.Bet do
         end
     end
 
-    def create_bet(bet, market_id, state) do
+    defp create_bet(bet, market_id, state) do
       child_name = :"bet_#{bet.id}"
       child_spec = Betunfair.Bet.OperationsBet.child_spec({:args, bet.id, child_name})
       process_name = :"supervisor_bet_market_#{market_id}"
@@ -179,14 +178,14 @@ defmodule Betunfair.Bet do
       end
     end
 
-    #@spec bet_lay(user_id :: user_id(), market_id :: market_id(), stake :: integer(), odds :: integer()) :: {:ok, bet_id()}
+    @spec bet_lay(user_id :: integer, market_id :: integer, stake :: float, odds :: float) :: {:ok, integer}
     def bet_lay(user_id, market_id, stake, odds) do
       process_name = :"gestor_bet_market_#{market_id}"
       GenServer.call(process_name, {:lay_bet, user_id, market_id, stake, odds})
     end
 
     #You manage the operations for creating OperationsBet processes. They are created when a bet is created.
-    def insert_bet(user_id, market_id, stake, odds, type) do
+    defp insert_bet(user_id, market_id, stake, odds, type) do
       #validating input
       Logger.info("Inserting bet for user #{user_id} on market #{market_id} with stake #{stake}$ and odds #{odds}")
       case Betunfair.Repo.get(Betunfair.User, user_id) do
@@ -228,8 +227,6 @@ defmodule Betunfair.Bet do
 
   defmodule OperationsBet do
     import Ecto.Query, only: [from: 2]
-    alias ElixirSense.Log
-    alias Betunfair.Bet
     use GenServer
 
     def start_link(bet_id) do
@@ -260,7 +257,7 @@ defmodule Betunfair.Bet do
       end
     end
 
-    def get_matched_bets(bet) do
+    defp get_matched_bets(bet) do
       query = from m in Betunfair.Matched,
               where: m.id_bet_backed == ^bet.id or m.id_bet_layed == ^bet.id,
               select: {m.id_bet_backed, m.id_bet_layed}
@@ -269,7 +266,19 @@ defmodule Betunfair.Bet do
       |> Enum.reject(&(&1 == bet.id))
     end
 
-    #@spec  bet_get(id :: bet_id()) :: {:ok, %{bet_type: :back | :lay, market_id: market_id(), user_id: user_id(), odds: integer(), original_stake: integer(), remaining_stake: integer(), matched_bets: [bet_id()], status: :active | :cancelled | :market_cancelled {:market_settled, | boolean()}}}
+    @spec bet_get(id :: integer) :: {:ok, %{bet_type: :back | :lay,
+                                            market_id: integer,
+                                            user_id: integer,
+                                            odds: integer,
+                                            original_stake: integer,
+                                            remaining_stake: integer,
+                                            matched_bets: [integer],
+                                            status: :active |
+                                                    :cancelled |
+                                                    :market_cancelled |
+                                                    {:market_settled, boolean}
+                                            }
+                                      }
     def bet_get(id) do
       # You manage the operations for getting a bet.
       case Betunfair.Repo.get(Betunfair.Bet, id) do
@@ -377,7 +386,7 @@ defmodule Betunfair.Bet do
         end
     end
 
-    #@spec bet_cancel(id :: bet_id()):: :ok
+    @spec bet_cancel(id :: integer):: :ok
     def bet_cancel(id) do
       #cancels the parts of a bet that has not been matched yet (remaining_stake).
       case Betunfair.Repo.get(Betunfair.Bet, id) do
