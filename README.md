@@ -1,30 +1,43 @@
-# betunfair
+# BetUnfair
 
-# Comands for generating the database.
-- Create database: mix ecto.create
-- Command schema of users: mix phx.gen.schema Betunfair.User users id_users:string:unique balance:integer name:string
-- Command schema of market: mix phx.gen.schema Betunfair.Market markets name:string description:string status:string
-- Command schema of bet: mix phx.gen.schema Betunfair.Bet bets odds:integer type:string original_stake:integer remaining_stake:integer user_id:references:users market_id:references:markets
-- Command schema of market: mix phx.gen.schema Betunfair.Matched matched id_bet_backed:references:bets id_bet_layed:references:bets
-- Insert schema information into the database: mix ecto.migrate
+Betting Exchange Platform written in Elixir for the Programming Scalable Systems subject @ Polythetnic University of Madrid
 
-## create and initialize db
+This project includes a GUI made with the Phoenix framework to interact with the internal API.
 
-requirements: psql and pg_ctl installed (postgres client and server applications for cli)
+![web GUI](pictures/web.jpg)
 
-create a postgresql database server:
+## Comands for generating the database & installing dependencies
+
+> [!IMPORTANT]
+> some of the steps (related to the psql setup) aren't required for certain linux distributions
+
+requirements:
+- elixir (iex and mix)
+- psql
+- pg_ctl
+
+compile the project
+```
+iex -S mix
+```
+
+Install dependencies (inside iex)
+```
+mix deps.get
+```
+
+create a postgresql database server (outside iex)
 
 ```
-export PGDATA=/path/to/your/db
+export PGDATA=/path/to/the/db
 source ~/.bashrc
 pg_ctl init
-#*change unix_socket_directory on /path/to/your/db/postgresql.conf*
+#in any text editor: *change unix_socket_directory on /path/to/the/db/postgresql.conf*
 pg_ctl start
 ```
-change the unix_socket_directory to /tmp in order to run a local instance
--> https://stackoverflow.com/a/72294531
+-> change the unix_socket_directory to /tmp in order to run a local instance (https://stackoverflow.com/a/72294531)
 
-run the psql client:
+run the psql client
 ```
 psql -h /tmp/ postgres #accessing the database
 ```
@@ -35,16 +48,6 @@ CREATE ROLE postgres LOGIN;
 ALTER USER postgres CREATEDB;
 ```
 
-then on the mix project
-```
-$ iex -S mix
-iex> mix ecto.create
-#no need to create the schemas (they are already created)
-iex> mix ecto.migrate
-```
-
-### run a psql client instance to see databases and created tables:
-
 inside psql:
 ```
 \l #see postgre databases
@@ -54,4 +57,27 @@ inside psql:
 \du #display users and permissions
 #display table info with standard sql queries (SELECT...)
 ```
--> more at: https://tomcam.github.io/postgres/
+-> more at https://tomcam.github.io/postgres/
+
+create Ecto database (inside iex)
+```
+mix ecto.create
+```
+
+generate Ecto Schemas of module: user, bet, market and bet (no need to do it, since the project already has it generated)
+```
+mix phx.gen.schema Betunfair.User users id_users:string:unique balance:integer name:string
+mix phx.gen.schema Betunfair.Market markets name:string description:string status:string
+mix phx.gen.schema Betunfair.Bet bets odds:integer type:string original_stake:integer remaining_stake:integer user_id:references:users 
+mix phx.gen.schema Betunfair.Matched matched id_bet_backed:references:bets id_bet_layed:references:bets
+```
+
+insert schema information into the database
+```
+mix ecto.migrate
+```
+
+execute the Phoenix app
+```
+mix phx.server
+```
