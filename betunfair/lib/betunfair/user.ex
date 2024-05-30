@@ -250,14 +250,15 @@ defmodule Betunfair.User do
           {:error, "User was not found"}
         _user ->
           case GenServer.call(:"user_#{id}", {:get, id}) do
+            {:error, reason} ->
+              {:error, reason}
             user ->
               {:ok, %{
                 name: user.name,
                 id: user.id_users,
                 balance: user.balance
               }}
-            {:error, reason} ->
-              {:error, reason}
+
           end
       end
     end
