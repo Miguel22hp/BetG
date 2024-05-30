@@ -6,85 +6,47 @@ This project includes a GUI made with the Phoenix framework to interact with the
 
 ![web GUI](pictures/web.jpg)
 
-## Comands for generating the database & installing dependencies
+## Dependencies:
 
-> [!IMPORTANT]
-> some of the steps (related to the psql setup) aren't required for certain linux distributions
+- psql (15.5) o versiones superiores.
+- elixir (1.14) o versiones superiores
+- phoenix (1.7.12)
 
-requirements:
-- elixir (iex and mix)
-- psql
-- pg_ctl
+## Up and Running
+execute in the root of the project the setup.sh file:
 
-compile the project
-```
-iex -S mix
+```sh
+$ sh setup.sh
 ```
 
-Install dependencies (inside iex)
-```
-mix deps.get
-```
+This script will:
+- Check and install needed dependencies.
+- Create the data base of the server in case it does not exist.
+- Migrate all the tables needed for the project into the data base.
+- Run all the tests for the application.
+- Initialize the Application alongside the phoenix server for the web interface.
 
-create a postgresql database server (outside iex)
+## PSQL setup
+In case psql is not already set up, it is needed to follow this steps
 
+#### Step 1: Update Package List
+```sh
+sudo apt-get update
 ```
-export PGDATA=/path/to/the/db
-source ~/.bashrc
-pg_ctl init
-#in any text editor: *change unix_socket_directory on /path/to/the/db/postgresql.conf*
-pg_ctl start
-```
--> change the unix_socket_directory to /tmp in order to run a local instance (https://stackoverflow.com/a/72294531)
+#### Step 2: Step 2: Install PostgreSQL
 
-run the psql client
+```sh
+sudo apt-get install postgresql
 ```
-psql -h /tmp/ postgres #accessing the database
+And verify the installation.
+```sh
+psql --version
 ```
-
-inside the postgres database:
+#### Step 3: Verify that psql user exist
+```sh
+psql -h hostname -U postgres -d dbname
 ```
-CREATE ROLE postgres LOGIN;
-ALTER USER postgres CREATEDB;
-```
-
-inside psql:
-```
-\l #see postgre databases
-\c betunfair_dev #connect to our db
-\dt #display tables
-\d bets #see schemas of the Bets table eg.
-\du #display users and permissions
-#display table info with standard sql queries (SELECT...)
-```
--> more at https://tomcam.github.io/postgres/
-
-create Ecto database (inside iex)
-```
-mix ecto.create
-```
-
-generate Ecto Schemas of module: user, bet, market and bet (no need to do it, since the project already has it generated)
-```
-mix phx.gen.schema Betunfair.User users id_users:string:unique balance:integer name:string
-mix phx.gen.schema Betunfair.Market markets name:string description:string status:string
-mix phx.gen.schema Betunfair.Bet bets odds:integer type:string original_stake:integer remaining_stake:integer user_id:references:users 
-mix phx.gen.schema Betunfair.Matched matched id_bet_backed:references:bets id_bet_layed:references:bets
-```
-
-insert schema information into the database
-```
-mix ecto.migrate
-```
-
-execute the Phoenix app
-```
-mix phx.server
-```
-
-## Execute Tests
-
-For internal logic (bet, user, market and matched modules)
-```
-mix test test/betunfair/*
+If psql user does not exist, we need to create it:
+```sh
+CREATE USER postgres WITH PASSWORD 'postgres';
 ```

@@ -33,7 +33,7 @@ mix ecto.migrate || error_exit "Failed to migrate the database."
 mix test test/betunfair/*
 
 # Start the Phoenix server
-mix phx.server || error_exit "Failed to start the Phoenix server."
+iex -S mix phx.server || error_exit "Failed to start the Phoenix server."
 
 # Output success message
 echo "Phoenix server initialized and running. You can access it at http://localhost:4000"
