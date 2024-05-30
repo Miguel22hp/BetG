@@ -346,7 +346,6 @@ defmodule Betunfair.Market do
             matcheds = Betunfair.Repo.all(query)
 
             results = for match <- matcheds do
-              IO.puts("Matched Empty: #{inspect(match.empty_stake)}")
               selected_stake =
                 if (result == true and match.empty_stake == "back") or (result == false and match.empty_stake == "lay") do
                   match.balance_empty_stake

@@ -32,8 +32,6 @@ defmodule Betunfair.Bet do
       state
     end
 
-    # A SupervisorBet creates a SupervisorMarketBet process as a child of him when a market is created. -> ?
-
     defp load_bets() do
       bets = Betunfair.Repo.all(Betunfair.Bet)
       for bet <- bets do
@@ -44,20 +42,10 @@ defmodule Betunfair.Bet do
 
     defp createProcessBet(bet) do
       child_name = :"bet_#{bet.id}"
-      IO.puts("BET: creating process #{child_name}")
-      if Process.whereis(child_name) == nil do
-        child_spec = Betunfair.Bet.OperationsBet.child_spec({:args, bet.id, child_name})
-        IO.puts("Child spec: #{inspect(child_spec)}")
-        case Supervisor.start_child(:bet_supervisor, child_spec) do
-          {:ok, pid} ->
-            IO.puts("Started bet child process with PID #{inspect(pid)}")
-          {:error, reason} ->
-            IO.puts("Failed to start bet child process: #{inspect(reason)}")
-        end
-      else
-        IO.puts("BET: process exists with PID #{Process.whereis(child_name)}")
+      child_spec = Betunfair.Bet.OperationsBet.child_spec({:args, bet.id, child_name})
+      Supervisor.start_child(:bet_supervisor, child_spec)
       end
-    end
+
   end
 
   defmodule GestorBet do
@@ -118,7 +106,6 @@ defmodule Betunfair.Bet do
   end
 
   defmodule GestorMarketBet do
-    require Logger
     use GenServer
 
     def start_link(market_id) do
@@ -127,7 +114,6 @@ defmodule Betunfair.Bet do
     end
 
     def init(args) do
-      IO.puts("creando gestor market bet #{args}")
       {:ok, args}
     end
 
@@ -187,7 +173,6 @@ defmodule Betunfair.Bet do
     #You manage the operations for creating OperationsBet processes. They are created when a bet is created.
     defp insert_bet(user_id, market_id, stake, odds, type) do
       #validating input
-      Logger.info("Inserting bet for user #{user_id} on market #{market_id} with stake #{stake}$ and odds #{odds}")
       case Betunfair.Repo.get(Betunfair.User, user_id) do
         nil ->
           {:error, "user with id #{user_id} doesn't exist"}
@@ -203,7 +188,6 @@ defmodule Betunfair.Bet do
                   changeset = Betunfair.User.changeset(user, %{balance: user.balance - stake})
                   case Betunfair.Repo.update(changeset) do
                     {:ok, user} ->
-                      IO.puts("updated user #{user_id} balance due to new inserted bet")
                       {:ok, user}
                     {:error, changeset} ->
                       {:error, "Couldn't modify user balance for user #{user_id}: #{inspect(changeset.errors)}"}
@@ -287,7 +271,6 @@ defmodule Betunfair.Bet do
         _bet ->
           case GenServer.call(:"bet_#{id}", {:bet_get, id}) do
             {:ok, bet} ->
-              Logger.info(bet)
               case bet.status do
                 "active" ->
                   case Betunfair.Repo.get(Betunfair.Market, bet.market_id) do
@@ -369,7 +352,6 @@ defmodule Betunfair.Bet do
               {:error, "Could not find the user #{bet.user_id} with bet #{bet.id}"}
             user ->
               changeset = Betunfair.User.changeset(user, %{balance: user.balance + bet.remaining_stake})
-              IO.puts("user obtained #{bet.remaining_stake}$ from cancelling bet #{bet_id}")
               case Betunfair.Repo.update(changeset) do
                 {:error, changeset} ->
                   {:error, "Could not update the bet with id #{bet_id}; #{inspect(changeset.errors)}", state}
