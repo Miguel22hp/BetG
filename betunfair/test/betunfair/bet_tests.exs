@@ -34,7 +34,7 @@ defmodule Betunfair.Bet_Tests do
     #-----
 
     Betunfair.User.OperationsUser.user_deposit(user_id, 100)
-    assert {:ok, bet_id} = Betunfair.Bet.GestorMarketBet.bet_back(user_id, market_id, 10, 1.5)
+    assert {:ok, _bet_id} = Betunfair.Bet.GestorMarketBet.bet_back(user_id, market_id, 10, 1.5)
   end
 
   test "create a laying bet for an event/market" do
@@ -50,7 +50,7 @@ defmodule Betunfair.Bet_Tests do
     Ecto.Adapters.SQL.Sandbox.allow(Betunfair.Repo, self(), process_name)
 
     Betunfair.User.OperationsUser.user_deposit(user_id, 100)
-    assert {:ok, bet_id} = Betunfair.Bet.GestorMarketBet.bet_lay(user_id, market_id, 10, 1.5)
+    assert {:ok, _bet_id} = Betunfair.Bet.GestorMarketBet.bet_lay(user_id, market_id, 10, 1.5)
   end
 
   test "create a backing bet for an event/market with insufficient funds" do

@@ -220,7 +220,7 @@ defmodule Betunfair.User do
           {:error, "User was not found"}
         user ->
           case GenServer.call(:"user_#{id}", {:deposit, amount, id, user}) do
-            {:ok, new_balance} ->
+            {:ok, _new_balance} ->
               :ok
             {:error, reason} ->
               {:error, reason}
@@ -235,7 +235,7 @@ defmodule Betunfair.User do
           {:error, "User was not found"}
         user ->
           case GenServer.call(:"user_#{id}", {:withdraw, amount, id, user}) do
-            {:ok, new_balance} ->
+            {:ok, _new_balance} ->
               :ok
             {:error, reason} ->
               {:error, reason}
@@ -248,16 +248,17 @@ defmodule Betunfair.User do
       case Betunfair.Repo.get(Betunfair.User, id) do
         nil ->
           {:error, "User was not found"}
-        user ->
+        _user ->
           case GenServer.call(:"user_#{id}", {:get, id}) do
+            {:error, reason} ->
+              {:error, reason}
             user ->
               {:ok, %{
                 name: user.name,
                 id: user.id_users,
                 balance: user.balance
               }}
-            {:error, reason} ->
-              {:error, reason}
+
           end
       end
     end

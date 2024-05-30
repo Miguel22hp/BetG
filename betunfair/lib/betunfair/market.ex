@@ -1,8 +1,8 @@
 defmodule Betunfair.Market do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Betunfair.Matched
-  alias Betunfair.Bet
+  #alias Betunfair.Matched
+  #alias Betunfair.Bet
   require Logger
 
   schema "markets" do
@@ -202,7 +202,7 @@ defmodule Betunfair.Market do
     use GenServer
     import Ecto.Query, only: [from: 2]
     require Logger
-    alias Betunfair.Repo
+    #alias Betunfair.Repo
 
     def child_spec({:args, child_name, market_id}) do
       %{
@@ -224,7 +224,7 @@ defmodule Betunfair.Market do
     end
 
     @spec handle_call({:market_bets, market_id ::  integer, market :: Betunfair.Market.t()}, GenServer.from(), any()) :: {:reply, {:ok, Enumerable.t( integer)}, any()}
-    def handle_call({:market_bets, market_id, market}, _from, state) do
+    def handle_call({:market_bets, market_id, _market}, _from, state) do
       query = from b in Betunfair.Bet, where: b.market_id == ^market_id
       bets = Betunfair.Repo.all(query)
       #crear un Enumerable.t con los id de las bets
@@ -291,7 +291,7 @@ defmodule Betunfair.Market do
             else
               {:reply, {:error, "Some deposits failed"}, state}
             end
-          {:error, changeset} ->
+          {:error, _changeset} ->
             {:reply, {:error, "Market could not be cancelled"}, state}
         end
       end
@@ -327,7 +327,7 @@ defmodule Betunfair.Market do
             else
               {:reply, {:error, "Some deposits failed"}, state}
             end
-          {:error, changeset} ->
+          {:error, _changeset} ->
             {:reply, {:error, "Market could not be cancelled"}, state}
         end
       end
@@ -376,7 +376,7 @@ defmodule Betunfair.Market do
             else
               {:reply, {:error, "Some deposits failed"}, state}
             end
-          {:error, changeset} ->
+          {:error, _changeset} ->
             {:reply, {:error, "Market could not be settled"}, state}
         end
       end
@@ -467,7 +467,7 @@ defmodule Betunfair.Market do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
           {:error, "Market was not found"}
-        market ->
+        _market ->
           case GenServer.call(:"market_#{market_id}", {:market_get, market_id}) do
             {:ok, market} ->
               if(market.status == "true") do
@@ -502,7 +502,7 @@ defmodule Betunfair.Market do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
           {:error, "Market was not found"}
-        market ->
+        _market ->
           case GenServer.call(:"match_#{market_id}", {:market_match, market_id}) do
             {:ok} ->
               :ok
@@ -517,7 +517,7 @@ defmodule Betunfair.Market do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
           {:error, "Market was not found"}
-        market ->
+        _market ->
           case GenServer.call(:"market_#{market_id}", {:market_pending_backs, market_id}) do
             {:ok, bet_ids} ->
               {:ok, Enum.map(bet_ids, &({&1.odds,&1.id}))}
@@ -532,7 +532,7 @@ defmodule Betunfair.Market do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
         nil ->
           {:error, "Market was not found"}
-        market ->
+        _market ->
           case GenServer.call(:"market_#{market_id}", {:market_pending_lays, market_id}) do
             {:ok, bet_ids} ->
               {:ok, Enum.map(bet_ids, &({&1.odds,&1.id}))}
