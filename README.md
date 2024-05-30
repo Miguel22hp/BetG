@@ -8,8 +8,8 @@ This project includes a GUI made with the Phoenix framework to interact with the
 
 ## Dependencies:
 
-- psql (15.5) o versiones superiores.
-- elixir (1.14) o versiones superiores
+- psql (15.5) or higher versions.
+- elixir (1.14) or higher versions.
 - phoenix (1.7.12)
 
 ## Up and Running
