@@ -27,24 +27,8 @@ defmodule Betunfair.Bet do
       children = [
         {Betunfair.Bet.GestorBet, []}
       ]
-      state = Supervisor.init(children, strategy: :one_for_one)
-      Task.start(fn -> load_bets() end) #load every bet from EctoDB as a process
-      state
+      Supervisor.init(children, strategy: :one_for_one)
     end
-
-    defp load_bets() do
-      bets = Betunfair.Repo.all(Betunfair.Bet)
-      for bet <- bets do
-        createProcessBet(bet)
-        Process.sleep(100) # Adds 100 ms delay between process creation sothey do not select the same PID
-      end
-    end
-
-    defp createProcessBet(bet) do
-      child_name = :"bet_#{bet.id}"
-      child_spec = Betunfair.Bet.OperationsBet.child_spec({:args, bet.id, child_name})
-      Supervisor.start_child(:bet_supervisor, child_spec)
-      end
 
   end
 
@@ -100,8 +84,25 @@ defmodule Betunfair.Bet do
       children = [
         {Betunfair.Bet.GestorMarketBet, {:args, market_id}}
       ]
-      Supervisor.init(children, strategy: :one_for_one)
+      state = Supervisor.init(children, strategy: :one_for_one)
+      Task.start(fn -> load_bets() end) #load every bet from EctoDB as a process
+      state
     end
+
+    defp load_bets() do
+      bets = Betunfair.Repo.all(Betunfair.Bet)
+      for bet <- bets do
+        createProcessBet(bet)
+        Process.sleep(100) # Adds 100 ms delay between process creation sothey do not select the same PID
+      end
+    end
+
+    defp createProcessBet(bet) do
+      child_name = :"bet_#{bet.id}"
+      parent_name = :"supervisor_bet_market_#{bet.market_id}"
+      child_spec = Betunfair.Bet.OperationsBet.child_spec({:args, bet.id, child_name})
+      Supervisor.start_child(parent_name, child_spec)
+      end
 
   end
 
