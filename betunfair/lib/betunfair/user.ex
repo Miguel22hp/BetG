@@ -21,7 +21,7 @@ defmodule Betunfair.User do
     """
 
     @doc """
-      Starts the supervisor for the user manager. Establish its name as :user_supervisor.
+      Starts the supervisor for the user manager. Establish the name as :user_supervisor.
     """
     @spec start_link(any) :: {:ok, Supervisor.t()} | {:error, any}
     def start_link(_) do
@@ -29,7 +29,8 @@ defmodule Betunfair.User do
     end
 
     @doc """
-      Initializes the supervisor with the children to be supervised.
+      Initializes the supervisor with the children to be supervised. Load
+      users' processes from users that are already in the database.
     """
     @spec init(any) :: Supervisor.Spec.t()
     def init(_) do
@@ -71,7 +72,7 @@ defmodule Betunfair.User do
     """
 
     @doc """
-      Starts the GenServer for the user manager. Establish its name as :user_gestor.
+      Starts the GenServer for the user manager. Establish the name as :user_gestor.
     """
     @spec start_link(Enumerable.t()) :: {:ok, GenServer.t()} | {:error, any}
     def start_link([]) do
@@ -166,6 +167,7 @@ defmodule Betunfair.User do
 
     @doc """
       Starts the GenServer for user operations.
+      Establish the name as :user_(id of the user in the database)
     """
     @spec start_link({:args, name :: String.t(), user_id :: Integer.t()}) :: {:ok, GenServer.t()} | {:error, any}
     def start_link({:args, name, user_id}) do

@@ -15,10 +15,26 @@ defmodule Betunfair.Market do
 
   defmodule SupervisorMarket do
     use Supervisor
+
+    @moduledoc """
+      This supervisor will supervise the market manager and the market operations processes.
+      It is created when the applications starts.
+    """
+
+    @doc """
+      Starts the supervisor for the market processes. Establish the name of
+      the supervisor :market_supervisor
+    """
+    @spec start_link(any) :: {:ok, pid()} | {:error, any()}
     def start_link(_) do
       Supervisor.start_link(__MODULE__, [], name: :market_supervisor)
     end
 
+    @doc """
+      Initializes the supervisor with the children to be supervised. Load
+      markets' processes from markets that are already in the database.
+    """
+    @spec init(any) :: {:ok, any}
     def init(_) do
       children = [
         {Betunfair.Market.GestorMarket, []}
@@ -29,7 +45,7 @@ defmodule Betunfair.Market do
     end
 
     @spec load_market() :: :ok
-    def load_market() do
+    defp load_market() do
       markets = Betunfair.Repo.all(Betunfair.Market)
       for market <- markets do
         createProcessMarket(market)
@@ -41,7 +57,7 @@ defmodule Betunfair.Market do
     end
 
     @spec createProcessMarket(market :: Betunfair.Market.t()) :: {nil | {:error, any()} | {:ok, :undefined | pid()} | {:ok, :undefined | pid(), any()}}
-    def createProcessMarket(market) do
+    defp createProcessMarket(market) do
       child_name = :"market_#{market.id}"
       if Process.whereis(child_name) == nil do
         Supervisor.start_child(:market_supervisor, {Betunfair.Market.OperationsMarket, {:args, child_name, market.id}})
@@ -49,7 +65,7 @@ defmodule Betunfair.Market do
     end
 
     @spec createProcessBetSupervisor(market_id ::  integer) :: {nil | {:error, any()} | {:ok, :undefined | pid()} | {:ok, :undefined | pid(), any()}}
-    def createProcessBetSupervisor(market_id) do
+    defp createProcessBetSupervisor(market_id) do
       child_name = :"supervisor_bet_market_#{market_id}"
       if Process.whereis(child_name) == nil do
         child_spec = Betunfair.Bet.SupervisorMarketBet.child_spec({:args, child_name, market_id})
@@ -58,7 +74,7 @@ defmodule Betunfair.Market do
     end
 
     @spec createProcessMatched(market_id ::  integer) :: {nil | {:error, any()} | {:ok, :undefined | pid()} | {:ok, :undefined | pid(), any()}}
-    def createProcessMatched(market_id) do
+    defp createProcessMatched(market_id) do
       child_name = :"match_#{market_id}"
       if Process.whereis(child_name) == nil do
         Supervisor.start_child(:matched_supervisor, {Betunfair.Matched.OperationsMatched, {:args, child_name, market_id}})
@@ -70,11 +86,26 @@ defmodule Betunfair.Market do
     require Logger
     use GenServer
 
+    @moduledoc """
+      This process will be supervised by the market supervisor.
+      The market manager is a GenServer that receives the market creation requests and creates the market and the process.
+      It also returns the list of markets and the list of active markets.
+      The process created will be supervised by the user supervisor.
+    """
+
+    @doc """
+      Starts the GenServer for the user manager. Establish the name as :user_gestor.
+    """
+    @spec start_link(Enumerable.t()) :: {:ok, GenServer.t()} | {:error, any}
     def start_link([]) do
       GenServer.start_link(__MODULE__, [], name: :market_gestor)
 
     end
 
+    @doc """
+      Initializes the GenServer with the arguments.
+    """
+    @spec init(any) :: {:ok, any}
     def init(args) do
       {:ok, args}
     end
@@ -111,7 +142,7 @@ defmodule Betunfair.Market do
     end
 
     @spec add_child_operation(name :: String.t(), description :: String.t()) :: {{:ok, market_id ::  integer} | {:error, reason :: String.t()}}
-    def add_child_operation(name, description) do
+    defp add_child_operation(name, description) do
       case insert_market(name, description) do
         {:ok, market} ->
           child_name = :"market_#{market.id}" #nombre del hijo
@@ -128,7 +159,7 @@ defmodule Betunfair.Market do
     end
 
     @spec insert_market(name :: String.t(), description :: String.t()) :: {{:ok, market :: Betunfair.Market.t()} | {:error, reason :: String.t()}}
-    def insert_market(name, description) do
+    defp insert_market(name, description) do
       changeset = Betunfair.Market.changeset(%Betunfair.Market{}, %{name: name, description: description, status: "active"})
       case Betunfair.Repo.insert(changeset) do
         {:ok, market} ->
@@ -164,6 +195,12 @@ defmodule Betunfair.Market do
       end
     end
 
+    @doc """
+      This function is used to create a new market. It will call the GenServer
+      to create the market, if there is no market with the same name, and return
+      the market_id if the market was created successfully. If the market was not
+      created, it will return an error.
+    """
     @spec market_create(name :: String.t(), description :: String.t()) :: {{:ok, market_id ::  integer} | {:error, reason :: String.t()}}
     def market_create(name, description) do
       case GenServer.call(:market_gestor, {:market_create, name, description}) do
@@ -174,6 +211,11 @@ defmodule Betunfair.Market do
       end
     end
 
+    @doc """
+      This function is used to get the list of all markets. It will get the list of
+      markets and return the market_ids if the list was obtained
+      successfully. If the list was not obtained, it will return an error.
+    """
     @spec market_list() :: {{:ok, market_ids :: Enumerable.t( integer)} | {:error, reason :: String.t()}}
     def market_list() do
       case GenServer.call(:market_gestor, {:market_list}) do
@@ -184,6 +226,11 @@ defmodule Betunfair.Market do
       end
     end
 
+    @doc """
+      This function is used to get the list of all active markets. It will get the
+      list of active markets and return the market_ids if the list was obtained
+      successfully. If the list was not obtained, it will return an error.
+    """
     @spec market_list_active() :: {{:ok, market_ids :: Enumerable.t( integer)} | {:error, reason :: String.t()}}
     def market_list_active() do
       case GenServer.call(:market_gestor, {:market_list_active}) do
@@ -204,6 +251,15 @@ defmodule Betunfair.Market do
     require Logger
     #alias Betunfair.Repo
 
+    @moduledoc """
+      This process will be supervised by the market supervisor.
+      The market operations is a GenServer that receives the market operations requests and performs the operations.
+    """
+
+    @doc """
+      Defines the child specification for the market operations process.
+    """
+    @spec child_spec({:args, child_name :: String.t(), user_id :: Integer.t()}) :: Supervisor.Spec.t()
     def child_spec({:args, child_name, market_id}) do
       %{
         id: child_name,
@@ -214,11 +270,20 @@ defmodule Betunfair.Market do
       }
     end
 
+    @doc """
+      Starts the GenServer for the market operations.
+      Establish the name as :market_(id of the market in the database)
+    """
+    @spec start_link(market_id ::  integer) :: {:ok, pid()} | {:error, any()}
     def start_link(market_id) do
       child_name = :"market_#{market_id}" #nombre del hijo
       GenServer.start_link(__MODULE__, market_id, name: child_name)
     end
 
+    @doc """
+      Initializes the GenServer with the market id.
+    """
+    @spec init(market_id ::  integer) :: {:ok, market_id}
     def init(market_id) do
       {:ok, market_id}
     end
@@ -247,8 +312,6 @@ defmodule Betunfair.Market do
       # All back bets from market_id with remaining_stake > 0
       query = from b in Betunfair.Bet, where: b.market_id == ^market_id and b.type == "back" and b.remaining_stake > 0.0, order_by: [asc: :odds]
       bets = Betunfair.Repo.all(query)
-
-
       {:reply, {:ok, bets}, state}
     end
 
@@ -381,12 +444,11 @@ defmodule Betunfair.Market do
         end
       end
       #Obtengo todos los match del market. Para ello, consigo la lista de bets matcheadas y veo su market_id
-
-
-
-
     end
 
+    @doc """
+      This function changes the status of the market to cancelled
+    """
     @spec market_cancel(market_id ::  integer) :: {:ok| {:error, any()}}
     def market_cancel(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
@@ -402,6 +464,9 @@ defmodule Betunfair.Market do
       end
     end
 
+    @doc """
+      This function changes the status of the market to frozen
+    """
     @spec market_freeze(market_id ::  integer) :: {:ok| {:error, any()}}
     def market_freeze(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
@@ -417,6 +482,10 @@ defmodule Betunfair.Market do
       end
     end
 
+    @doc """
+      This function changes the status of the market to settled, and true of false, depending on the result
+      True indicates that the back bet won, and false indicates that the lay bet won.
+    """
     @spec market_settle(market_id ::  integer, result :: boolean()) :: {:ok| {:error, any()}}
     def market_settle(market_id, result) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
@@ -447,6 +516,9 @@ defmodule Betunfair.Market do
       end
     end
 
+    @doc """
+      This function returns the list of bets of the market
+    """
     @spec market_bets(market_id ::  integer) :: { {:ok, Enumerable.t({integer(),  integer})} | {:error, any()}}
     def market_bets(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
@@ -462,6 +534,9 @@ defmodule Betunfair.Market do
       end
     end
 
+    @doc """
+      This function returns the information of the market
+    """
     @spec market_get(market_id ::  integer) :: { {:ok, %{name: String.t(), description: String.t(), status: atom()}} | {:error, any()}}
     def market_get(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
@@ -497,6 +572,9 @@ defmodule Betunfair.Market do
       end
     end
 
+    @doc """
+      This function matches the bets of the market. It applies the algorithm to match the bets.
+    """
     @spec market_match(market_id ::  integer) :: { :ok | {:error, any()}}
     def market_match(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
@@ -512,6 +590,10 @@ defmodule Betunfair.Market do
       end
     end
 
+    @doc """
+      This function returns the list of non entirely matched back bets of the market.
+      A bet is entirely matched if its remaining stake is 0.
+    """
     @spec market_pending_backs(market_id ::  integer) :: { {:ok, Enumerable.t({float(),  integer})} | {:error, any()}}
     def market_pending_backs(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
@@ -527,6 +609,10 @@ defmodule Betunfair.Market do
       end
     end
 
+    @doc """
+      This function returns the list of non entirely matched lay bets of the market.
+      A bet is entirely matched if its remaining stake is 0.
+    """
     @spec market_pending_lays(market_id ::  integer) :: { {:ok, Enumerable.t({float(),  integer})} | {:error, any()}}
     def market_pending_lays(market_id) do
       case Betunfair.Repo.get(Betunfair.Market, market_id) do
