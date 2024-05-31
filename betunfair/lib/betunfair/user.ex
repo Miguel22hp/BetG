@@ -15,12 +15,25 @@ defmodule Betunfair.User do
   defmodule SupervisorUser do
     use Supervisor
 
+    @moduledoc """
+      This supervisor will supervise the user manager and the user operations processes.
+      It is created when the applications starts.
+    """
+
+    @doc """
+      Starts the supervisor for the user manager. Establish the name as :user_supervisor.
+    """
+    @spec start_link(any) :: {:ok, Supervisor.t()} | {:error, any}
     def start_link(_) do
       Supervisor.start_link(__MODULE__, [], name: :user_supervisor)
     end
 
+    @doc """
+      Initializes the supervisor with the children to be supervised. Load
+      users' processes from users that are already in the database.
+    """
+    @spec init(any) :: Supervisor.Spec.t()
     def init(_) do
-
       children = [
         {Betunfair.User.GestorUser, []}
       ]
@@ -30,7 +43,7 @@ defmodule Betunfair.User do
     end
 
     @spec load_user() :: :ok
-    def load_user() do
+    defp load_user() do
       users = Betunfair.Repo.all(Betunfair.User)
       for user <- users do
         createProcessUser(user)
@@ -40,7 +53,7 @@ defmodule Betunfair.User do
     end
 
     @spec createProcessUser(Betunfair.User.t) :: :ok
-    def createProcessUser(user) do
+    defp createProcessUser(user) do
       child_name = :"user_#{user.id}"
       if Process.whereis(child_name) == nil do
         Supervisor.start_child(:user_supervisor, {Betunfair.User.OperationsUser, {:args, child_name, user.id}})
@@ -52,11 +65,24 @@ defmodule Betunfair.User do
 
   defmodule GestorUser do
     use GenServer
+    @moduledoc """
+      This process will be supervised by the user supervisor.
+      The user manager is a GenServer that receives the user creation requests and creates the user and the process.
+      The process created will be supervised by the user supervisor.
+    """
 
+    @doc """
+      Starts the GenServer for the user manager. Establish the name as :user_gestor.
+    """
+    @spec start_link(Enumerable.t()) :: {:ok, GenServer.t()} | {:error, any}
     def start_link([]) do
       GenServer.start_link(__MODULE__, [], name: :user_gestor)
     end
 
+    @doc """
+      Initializes the GenServer with the arguments.
+    """
+    @spec init(any) :: {:ok, any}
     def init(args) do
       {:ok, args}
     end
@@ -72,6 +98,12 @@ defmodule Betunfair.User do
 
     end
 
+    @doc """
+      This function is called when a new user is created. If there is no user with that id in the database,
+      it creates a new user and a new process for that user, and adds the user into the database.
+      If the user already exists, it returns an error message. This new process will be supervised by the
+      user supervisor.
+    """
     @spec user_create(id :: String.t(), name :: String.t()) :: {:ok, Integer.t()} | {:error, String.t()}
     def user_create(id , name) do
       case Betunfair.Repo.get_by(Betunfair.User, id_users: id) do
@@ -83,7 +115,7 @@ defmodule Betunfair.User do
     end
 
     @spec add_child_operation(name :: String.t(), id :: String.t()) :: {:ok, Integer.t()} | {:error, String.t()}
-    def add_child_operation(name, id) do
+    defp add_child_operation(name, id) do
       case insert_user(id, name) do
         {:ok, user} ->
           child_name = :"user_#{user.id}" #nombre del hijo
@@ -95,7 +127,7 @@ defmodule Betunfair.User do
     end
 
     @spec insert_user(id :: String.t(), name :: String.t()) :: {:ok, Betunfair.User.t()} | {:error, String.t()}
-    def insert_user(id, name) do
+    defp insert_user(id, name) do
       changeset = Betunfair.User.changeset(%Betunfair.User{}, %{id_users: id, name: name, balance: 0})
 
 
@@ -113,6 +145,15 @@ defmodule Betunfair.User do
     use GenServer
     import Ecto.Query, only: [from: 2]
 
+    @moduledoc """
+      This process will be supervised by the user supervisor.
+      The user operations process is a GenServer that receives the user operations requests and processes them.
+    """
+
+    @doc """
+      Defines the child specification for the user operations process.
+    """
+    @spec child_spec({:args, child_name :: String.t(), user_id :: Integer.t()}) :: Supervisor.Spec.t()
     def child_spec({:args, child_name, user_id}) do
       %{
         id: child_name,
@@ -124,11 +165,19 @@ defmodule Betunfair.User do
 
     end
 
-
+    @doc """
+      Starts the GenServer for user operations.
+      Establish the name as :user_(id of the user in the database)
+    """
+    @spec start_link({:args, name :: String.t(), user_id :: Integer.t()}) :: {:ok, GenServer.t()} | {:error, any}
     def start_link({:args, name, user_id}) do
       GenServer.start_link(__MODULE__,{user_id} , name: name)
     end
 
+    @doc """
+      Initializes the GenServer with the user ID.
+    """
+    @spec init(user_id :: Integer.t()) :: {:ok, Integer.t()} | {:error, String.t()}
     def init(user_id) do
       {:ok, user_id}
     end
@@ -144,7 +193,7 @@ defmodule Betunfair.User do
     end
 
     @spec deposit(user_id :: Integer.t(), amount :: Float.t(), user :: Betunfair.User.t()) :: {:ok, Float.t()} | {:error, String.t()}
-    def deposit(_user_id, amount, user) do
+    defp deposit(_user_id, amount, user) do
       if amount <= 0 do
         {:error, "The amount you need to deposit must be greater than 0"}
       else
@@ -171,7 +220,7 @@ defmodule Betunfair.User do
     end
 
     @spec withdraw(user_id :: Integer.t(), amount :: Float.t(), user :: Betunfair.User.t()) :: {:ok, Float.t()} | {:error, String.t()}
-    def withdraw(_user_id, amount, user) do
+    defp withdraw(_user_id, amount, user) do
       if amount <= 0 do
         {:error, "The amount you need to withdraw must be greater than 0"}
       else
@@ -213,6 +262,11 @@ defmodule Betunfair.User do
 
 
     #--- Client functions ---
+    @doc """
+      This function is called when a user wants to deposit money into his account.
+      It checks if the user exists, and if it does, it adds the amount to the user's balance,
+      if the amount he wants to place is valid.
+    """
     @spec user_deposit(id :: Integer.t(), amount :: Float.t()) :: :ok | {:error, String.t()}
     def user_deposit(id, amount) do
       case Betunfair.Repo.get(Betunfair.User, id) do
@@ -228,6 +282,11 @@ defmodule Betunfair.User do
       end
     end
 
+    @doc """
+      This function is called when a user wants to withdraw money from his account.
+      It checks if the user exists, and if it does, it subtracts the amount from the user's balance,
+      if the amount he wants to withdraw is valid.
+    """
     @spec user_withdraw(id :: Integer.t(), amount :: Float.t()) :: :ok | {:error, String.t()}
     def user_withdraw(id, amount) do
       case Betunfair.Repo.get(Betunfair.User, id) do
@@ -243,6 +302,10 @@ defmodule Betunfair.User do
       end
     end
 
+    @doc """
+      This function is called when a user wants to get his information.
+      It checks if the user exists, and if it does, it returns the user's information.
+    """
     @spec user_get(id :: Integer.t()) :: {:ok, %{name: String.t(), id: Integer.t(), balance: Float.t()}} | {:error, String.t()}
     def user_get(id) do
       case Betunfair.Repo.get(Betunfair.User, id) do
@@ -263,6 +326,10 @@ defmodule Betunfair.User do
       end
     end
 
+    @doc """
+      This function is called when a user wants to get his bets.
+      It checks if the user exists, and if it does, it returns the user's bets' ids.
+    """
     @spec user_bets(id :: Integer.t()) :: {:ok, Enumerable.t(Integer.t())} | {:error, String.t()}
     def user_bets(id) do
       case Betunfair.Repo.get(Betunfair.User, id) do
