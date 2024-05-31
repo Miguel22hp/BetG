@@ -6,7 +6,24 @@ This part of the project is organized with a clear structure to handle routing, 
 
 ## Router
 
-The router is responsible for defining the URI paths we are using.
+The router is responsible for defining the URI paths we are using. It is like an API, but controlled by the phoenix framework.
+
+### GET Operations
+| Path                 | Controller          | Action         | Description                                                 |
+|----------------------|---------------------|----------------|-------------------------------------------------------------|
+| `/`                  | PageController      | home           | Renders the home page of the application.                   |
+| `/users/:id/profile` | ProfileController   | profile        | Displays the profile page for a specific user.              |
+| `/markets`           | MarketsController   | list_markets   | Retrieves and displays a list of all available betting markets. |
+| `/markets/:id/bets`  | BetsController      | bets           | Shows the bets available for a specific market.             |
+
+### POST Operations
+| Path               | Controller         | Action          | Description                                     |
+|--------------------|--------------------|-----------------|-------------------------------------------------|
+| `/add_funds`       | ProfileController  | add_funds       | Handles the operation to add funds to a user’s account. |
+| `/remove_funds`    | ProfileController  | withdraw_funds  | Allows users to withdraw funds from their account.  |
+| `/bets/cancel`     | ProfileController  | cancel_bet      | Provides functionality for users to cancel an existing bet. |
+| `/bets/create_bet` | BetsController     | create_bet      | Enables users to place new bets on available markets.      |
+
 
 ## Components and Controllers
 
@@ -26,7 +43,7 @@ This directory contains the main parts of the HTML:
 
 This directory contains the different HTML files and their corresponding controllers:
 
-- **Home, Bets, and Profile**: 
+- **Home, Bets, Markets, and Profile**: 
   - These directories contain the specific HTML for each section.
   
 - **Controllers**: 
