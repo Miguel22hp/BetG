@@ -283,7 +283,7 @@ defmodule Betunfair.Market do
     @doc """
       Initializes the GenServer with the market id.
     """
-    @spec init(market_id ::  integer) :: {:ok, market_id}
+    @spec init(market_id ::  integer) :: {:ok, Integer.t()}
     def init(market_id) do
       {:ok, market_id}
     end
