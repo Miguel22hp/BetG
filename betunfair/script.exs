@@ -1,71 +1,15 @@
-# BetUnfair
-
-Betting Exchange Platform written in Elixir for the Programming Scalable Systems subject @ Polythetnic University of Madrid
-
-This project includes a GUI made with the Phoenix framework to interact with the internal API.
-
-![web GUI](pictures/web.jpg)
-
-## Dependencies:
-
-- psql (15.5) or higher versions.
-- elixir (1.14) or higher versions.
-- phoenix (1.7.12)
-
-## PSQL setup
-In case psql is not already set up, it is needed to follow this steps
-
-### Step 1: Update Package List
-```sh
-sudo apt-get update
-```
-### Step 2: Step 2: Install PostgreSQL
-
-```sh
-sudo apt-get install postgresql
-```
-And verify the installation.
-```sh
-psql --version
-```
-### Step 3: Verify that psql user exist
-```sh
-psql -h hostname -U postgres -d dbname
-```
-If psql user does not exist, we need to create it:
-```sh
-CREATE USER postgres WITH PASSWORD 'postgres';
-```
-
-## Up and Running
-execute in the root of the project the setup.sh file:
-
-```sh
-$ sh setup.sh
-```
-
-This script will:
-- Check and install needed dependencies.
-- Create the data base of the server in case it does not exist.
-- Migrate all the tables needed for the project into the data base.
-- Run all the tests for the application.
-- Initialize the Application alongside the phoenix server for the web interface.
-
-After executing this script, the phoenix server will be initialized with an empty database. To get some information in the database, you can write in the iex the command `c("script.exs")`, that will execute the order in thr block bellow. I recommend to write every order in the shell, so you are able to check what every function answers.
-
-```
 # Create users 1 y 2 y check their operations
 Betunfair.User.GestorUser.user_create("1", "U1") # Creates user 1
 Supervisor.which_children(:user_supervisor) # Checks ":user_supervisor" children processes
 Betunfair.User.OperationsUser.user_deposit(1, 200) # Deposits 200 in the user's 2 money
 Betunfair.User.OperationsUser.user_get(1) # Gets user 1 information
-Betunfair.User.OperationsUser.user_withdraw(1, 100) # Withdraws 100 from the user's 1 money 
+Betunfair.User.OperationsUser.user_withdraw(1, 100) # Withdraws 100 from the user's 1 money
 Betunfair.User.OperationsUser.user_get(1) # Gets user 1 information
 Betunfair.User.GestorUser.user_create("2", "U2") # Creates user 2
-Betunfair.User.OperationsUser.user_deposit(2, 100) # Deposits 100 in the user's 2 money 
+Betunfair.User.OperationsUser.user_deposit(2, 100) # Deposits 100 in the user's 2 money
 Betunfair.User.OperationsUser.user_get(2) # Gets user 2 information
 
-# Create market 1 
+# Create market 1
 Betunfair.Market.GestorMarket.market_list() # Get the list of markets
 Betunfair.Market.GestorMarket.market_list_active() # Get the list of active markets
 Betunfair.Market.GestorMarket.market_create("M1", "Mercado Ejemplo 1") # Create an active market
@@ -85,7 +29,7 @@ Betunfair.Bet.GestorMarketBet.bet_lay(2, 1, 40, 1.9) # Create a lay bet for user
 Betunfair.User.OperationsUser.user_get(2) # Gets user 2 information
 Betunfair.User.OperationsUser.user_get(1) # Gets user 1 information
 Betunfair.Bet.GestorMarketBet.bet_back(1, 1, 19, 1.3) # Create a back bet for user 1 in market 1
-Betunfair.Bet.GestorMarketBet.bet_back(1, 1, 19, 80) # Create a back bet for user 1 in market 1. This one you will cancel 
+Betunfair.Bet.GestorMarketBet.bet_back(1, 1, 19, 80) # Create a back bet for user 1 in market 1. This one you will cancel
 Betunfair.User.OperationsUser.user_get(1) # Gets user 1 information
 Betunfair.Market.OperationsMarket.market_get(1) # Gets market 1 information
 
@@ -120,8 +64,8 @@ Betunfair.User.OperationsUser.user_get(2) # Gets user 2 information
 # Recarga saldos usuarios
 Betunfair.User.OperationsUser.user_withdraw(1, 31) # Withdraw the ammount of money left in user 1
 Betunfair.User.OperationsUser.user_withdraw(2, 138.3)  # Withdraw the ammount of money left in user 2
-Betunfair.User.OperationsUser.user_deposit(1, 100) # Deposits 100 in the user's 1 money 
-Betunfair.User.OperationsUser.user_deposit(2, 100) # Deposits 100 in the user's 2 money 
+Betunfair.User.OperationsUser.user_deposit(1, 100) # Deposits 100 in the user's 1 money
+Betunfair.User.OperationsUser.user_deposit(2, 100) # Deposits 100 in the user's 2 money
 
 # Crea el mercado dos
 Betunfair.Market.GestorMarket.market_create("M2", "Mercado Ejemplo 2") # Create an active market
@@ -150,8 +94,8 @@ Betunfair.User.OperationsUser.user_get(2) # Gets user 2 information
 # Recarga saldos usuarios
 Betunfair.User.OperationsUser.user_withdraw(1, 130.7) # Withdraw the ammount of money left in user 1
 Betunfair.User.OperationsUser.user_withdraw(2, 69.3) # Withdraw the ammount of money left in user 2
-Betunfair.User.OperationsUser.user_deposit(1, 100) # Deposits 100 in the user's 1 money 
-Betunfair.User.OperationsUser.user_deposit(2, 100) # Deposits 100 in the user's 2 money 
+Betunfair.User.OperationsUser.user_deposit(1, 100) # Deposits 100 in the user's 1 money
+Betunfair.User.OperationsUser.user_deposit(2, 100) # Deposits 100 in the user's 2 money
 
 # Crea el mercado 3
 Betunfair.Market.GestorMarket.market_create("M3", "Mercado Ejemplo 3") # Create an active market
@@ -189,8 +133,8 @@ Betunfair.User.OperationsUser.user_get(2) # Gets user 2 information
 
 Betunfair.User.OperationsUser.user_withdraw(1, 31) # Withdraw the ammount of money left in user 1
 Betunfair.User.OperationsUser.user_withdraw(2, 69.3) # Withdraw the ammount of money left in user 1
-Betunfair.User.OperationsUser.user_deposit(1, 100) # Deposits 100 in the user's 1 money 
-Betunfair.User.OperationsUser.user_deposit(2, 100) # Deposits 100 in the user's 2 money 
+Betunfair.User.OperationsUser.user_deposit(1, 100) # Deposits 100 in the user's 1 money
+Betunfair.User.OperationsUser.user_deposit(2, 100) # Deposits 100 in the user's 2 money
 
 Betunfair.Market.GestorMarket.market_create("M5", "Mercado Ejemplo 5") # Create an active market
 Betunfair.Bet.GestorMarketBet.bet_back(1, 5, 50, 1.5) # Create a back bet for user 1 in market 5
@@ -203,5 +147,3 @@ Betunfair.User.OperationsUser.user_get(2) # Gets user 2 information
 Betunfair.Market.OperationsMarket.market_settle(5, false) # Settle the market so lay wins
 Betunfair.User.OperationsUser.user_get(1) # Gets user 1 information
 Betunfair.User.OperationsUser.user_get(2) # Gets user 2 information
-
-```
