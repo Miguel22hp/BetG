@@ -43,7 +43,7 @@ defmodule Betunfair.User do
     end
 
     @spec load_user() :: :ok
-    defp load_user() do
+    def load_user() do
       users = Betunfair.Repo.all(Betunfair.User)
       for user <- users do
         createProcessUser(user)
@@ -53,7 +53,7 @@ defmodule Betunfair.User do
     end
 
     @spec createProcessUser(Betunfair.User.t) :: :ok
-    defp createProcessUser(user) do
+    def createProcessUser(user) do
       child_name = :"user_#{user.id}"
       if Process.whereis(child_name) == nil do
         Supervisor.start_child(:user_supervisor, {Betunfair.User.OperationsUser, {:args, child_name, user.id}})
@@ -115,7 +115,7 @@ defmodule Betunfair.User do
     end
 
     @spec add_child_operation(name :: String.t(), id :: String.t()) :: {:ok, Integer.t()} | {:error, String.t()}
-    defp add_child_operation(name, id) do
+    def add_child_operation(name, id) do
       case insert_user(id, name) do
         {:ok, user} ->
           child_name = :"user_#{user.id}" #nombre del hijo
@@ -127,7 +127,7 @@ defmodule Betunfair.User do
     end
 
     @spec insert_user(id :: String.t(), name :: String.t()) :: {:ok, Betunfair.User.t()} | {:error, String.t()}
-    defp insert_user(id, name) do
+    def insert_user(id, name) do
       changeset = Betunfair.User.changeset(%Betunfair.User{}, %{id_users: id, name: name, balance: 0})
 
 
@@ -193,7 +193,7 @@ defmodule Betunfair.User do
     end
 
     @spec deposit(user_id :: Integer.t(), amount :: Float.t(), user :: Betunfair.User.t()) :: {:ok, Float.t()} | {:error, String.t()}
-    defp deposit(_user_id, amount, user) do
+    def deposit(_user_id, amount, user) do
       if amount <= 0 do
         {:error, "The amount you need to deposit must be greater than 0"}
       else
@@ -220,7 +220,7 @@ defmodule Betunfair.User do
     end
 
     @spec withdraw(user_id :: Integer.t(), amount :: Float.t(), user :: Betunfair.User.t()) :: {:ok, Float.t()} | {:error, String.t()}
-    defp withdraw(_user_id, amount, user) do
+    def withdraw(_user_id, amount, user) do
       if amount <= 0 do
         {:error, "The amount you need to withdraw must be greater than 0"}
       else
