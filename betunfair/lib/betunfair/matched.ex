@@ -298,7 +298,7 @@ defmodule Betunfair.Matched do
     Rounds a float value to two decimal places, for currency values.
     """
     @spec round_to_two(float()) :: float()
-    defp round_to_two(value) do
+    def round_to_two(value) do
       Float.round(value, 2)
     end
 
