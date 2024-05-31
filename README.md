@@ -45,11 +45,11 @@ $ sh setup.sh
 ```
 
 This script will:
-- Check and install needed dependencies.
-- Create the data base of the server in case it does not exist.
-- Migrate all the tables needed for the project into the data base.
-- Run all the tests for the application.
-- Initialize the Application alongside the phoenix server for the web interface.
+- Check and install needed dependencies. `mix deps.get`
+- Create the data base of the server in case it does not exist. `mix ecto.create`
+- Migrate all the tables needed for the project into the data base. `mix ecto.migrate`
+- Run all the tests for the application. `mix test test/betunfair/*`
+- Initialize the Application alongside the phoenix server for the web interface. `mix docs`
 
 After executing this script, the phoenix server will be initialized with an empty database. To get some information in the database, you can write in the iex the command `c("script.exs")`, that will execute the order in the block below. I recommend to write every instruction in the shell, so you are able to check what every function returns.
 
