@@ -1,7 +1,6 @@
 defmodule Betunfair.Bet do
   use Ecto.Schema
   import Ecto.Changeset
-  require Logger
 
   schema "bets" do
     field :odds, :float
@@ -19,6 +18,10 @@ defmodule Betunfair.Bet do
   defmodule SupervisorBet do
     use Supervisor
 
+    @moduledoc """
+      This module defines a supervisor for managing the Betunfair.Bet.GestorBet process.
+    """
+
     def start_link(_) do
       Supervisor.start_link(__MODULE__, [], name: :bet_supervisor)
     end
@@ -34,6 +37,11 @@ defmodule Betunfair.Bet do
 
   defmodule GestorBet do
     use GenServer
+
+    @moduledoc """
+      This GenServer allows to create the market bet supervisors, for bets in a given market.
+      The process created of this module will be supervised by the SupervisorBet.
+    """
 
     def start_link([]) do
       GenServer.start_link(__MODULE__, [], name: :bet_gestor)
@@ -64,6 +72,11 @@ defmodule Betunfair.Bet do
 
   defmodule SupervisorMarketBet do
     use Supervisor
+
+     @moduledoc """
+      This module supervises the bets bets generated on a given market.
+      The process created of this module will be supervised by the SupervisorBet.
+    """
 
     def child_spec({:args, child_name, market_id}) do
       %{
@@ -102,12 +115,17 @@ defmodule Betunfair.Bet do
       parent_name = :"supervisor_bet_market_#{bet.market_id}"
       child_spec = Betunfair.Bet.OperationsBet.child_spec({:args, bet.id, child_name})
       Supervisor.start_child(parent_name, child_spec)
-      end
+    end
 
   end
 
   defmodule GestorMarketBet do
     use GenServer
+
+    @moduledoc """
+      This module provides functions for managing bets on specific markets.
+      It uses the GenServer behavior to handle calls and maintain state.
+    """
 
     def start_link(market_id) do
       child_name = :"gestor_bet_market_#{market_id}"
@@ -138,6 +156,21 @@ defmodule Betunfair.Bet do
       end
     end
 
+    @doc """
+    Makes a backing bet for a user on a specific market.
+
+    ## Parameters
+
+    - `user_id` - The ID of the user placing the bet.
+    - `market_id` - The ID of the market on which the bet is placed.
+    - `stake` - The amount of money to be bet.
+    - `odds` - The odds at which the bet is placed.
+
+    ## Returns
+
+    A tuple `{:ok, bet_id}` indicating a successful bet, where `bet_id` is the ID of the bet.
+    """
+
     @spec bet_back(user_id :: integer, market_id :: integer, stake :: integer, odds :: integer) :: {:ok, integer}
     def bet_back(user_id, market_id, stake, odds) do
       process_name = :"gestor_bet_market_#{market_id}"
@@ -164,6 +197,21 @@ defmodule Betunfair.Bet do
           {:reply, {:error, reason}, state}
       end
     end
+
+    @doc """
+    Makes a laying bet for a user on a specific market.
+
+    ## Parameters
+
+      - `user_id` - The ID of the user placing the bet.
+      - `market_id` - The ID of the market on which the bet is placed.
+      - `stake` - The amount of money to be staked on the bet.
+      - `odds` - The odds at which the bet is placed.
+
+    ## Returns
+
+    A tuple `{:ok, bet_id}` indicating that the bet was successfully placed, where `bet_id` is the ID of the bet.
+    """
 
     @spec bet_lay(user_id :: integer, market_id :: integer, stake :: float, odds :: float) :: {:ok, integer}
     def bet_lay(user_id, market_id, stake, odds) do
@@ -213,6 +261,11 @@ defmodule Betunfair.Bet do
   defmodule OperationsBet do
     import Ecto.Query, only: [from: 2]
     use GenServer
+
+     @moduledoc """
+    This GenServer allows to create the view and cancel bets of a market, given its bet_id.
+    The process created of this module will be supervised by the SupervisorBet.
+    """
 
     def start_link(bet_id) do
       child_name = :"bet_#{bet_id}"
@@ -264,6 +317,27 @@ defmodule Betunfair.Bet do
                                                     {:market_settled, boolean}
                                             }
                                       }
+    @doc"""
+    Retrieves information about a specific bet.
+
+    ## Parameter
+    - `id` (integer): The ID of the bet to retrieve.
+
+    ## Returns
+    - `{:ok, bet}`: A tuple containing the bet information if the bet is found.
+      - `bet` (map): A map containing the following fields:
+        - `bet_type` (:back | :lay): The type of the bet (back or lay).
+        - `market_id` (integer): The ID of the market the bet belongs to.
+        - `user_id` (integer): The ID of the user who placed the bet.
+        - `odds` (integer): The odds of the bet.
+        - `original_stake` (integer): The original stake of the bet.
+        - `remaining_stake` (integer): The remaining stake of the bet.
+        - `matched_bets` ([integer]): A list of IDs of matched bets.
+        - `status` (:active | :cancelled | :market_cancelled | {:market_settled, boolean}): The status of the bet.
+
+    - `{:error, reason}`: A tuple indicating an error if the bet is not found or an error occurs during retrieval.
+      - `reason` (string): The reason for the error.
+    """
     def bet_get(id) do
       # You manage the operations for getting a bet.
       case Betunfair.Repo.get(Betunfair.Bet, id) do
@@ -369,9 +443,21 @@ defmodule Betunfair.Bet do
         end
     end
 
+    @doc """
+    Cancels a bet with the given id, returning the parts of the bet that has not been matched yet (remaining_stake).
+
+    ## Parameters
+
+    - `id`: The id of the bet to cancel.
+
+    ## Returns
+
+    - `:ok` if the bet is successfully canceled.
+    - `{:error, reason}` if the bet cannot be found or there is an error canceling the bet.
+    """
+
     @spec bet_cancel(id :: integer):: :ok
     def bet_cancel(id) do
-      #cancels the parts of a bet that has not been matched yet (remaining_stake).
       case Betunfair.Repo.get(Betunfair.Bet, id) do
         nil ->
           {:error, "Could not find the bet with id #{id}"}
