@@ -4,7 +4,7 @@ Betting Exchange Platform written in Elixir for the Programming Scalable Systems
 
 This project includes a GUI made with the Phoenix framework to interact with the internal API.
 
-![web GUI](pictures/web.jpg)
+![web GUI](web_gui.gif)
 
 ## Dependencies:
 
@@ -51,7 +51,7 @@ This script will:
 - Run all the tests for the application.
 - Initialize the Application alongside the phoenix server for the web interface.
 
-After executing this script, the phoenix server will be initialized with an empty database. To get some information in the database, you can write in the iex the command `c("script.exs")`, that will execute the order in thr block bellow. I recommend to write every order in the shell, so you are able to check what every function answers.
+After executing this script, the phoenix server will be initialized with an empty database. To get some information in the database, you can write in the iex the command `c("script.exs")`, that will execute the order in the block below. I recommend to write every instruction in the shell, so you are able to check what every function returns.
 
 ```
 # Create users 1 y 2 y check their operations
