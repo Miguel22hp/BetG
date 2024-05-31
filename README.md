@@ -205,3 +205,9 @@ Betunfair.User.OperationsUser.user_get(1) # Gets user 1 information
 Betunfair.User.OperationsUser.user_get(2) # Gets user 2 information
 
 ```
+
+For checking the GUi we have created, you should search the following url:
+```
+http://localhost:4000
+```
+This will open a menu where you will be able to operate as a user, depositing money, withdrawing it, or placing bets in active markets. When the GUI is open, if you write any command in the iex, you shoud reload the page.
