@@ -45,7 +45,7 @@ defmodule Betunfair.Market do
     end
 
     @spec load_market() :: :ok
-    defp load_market() do
+    def load_market() do
       markets = Betunfair.Repo.all(Betunfair.Market)
       for market <- markets do
         createProcessMarket(market)
@@ -57,7 +57,7 @@ defmodule Betunfair.Market do
     end
 
     @spec createProcessMarket(market :: Betunfair.Market.t()) :: {nil | {:error, any()} | {:ok, :undefined | pid()} | {:ok, :undefined | pid(), any()}}
-    defp createProcessMarket(market) do
+    def createProcessMarket(market) do
       child_name = :"market_#{market.id}"
       if Process.whereis(child_name) == nil do
         Supervisor.start_child(:market_supervisor, {Betunfair.Market.OperationsMarket, {:args, child_name, market.id}})
@@ -65,7 +65,7 @@ defmodule Betunfair.Market do
     end
 
     @spec createProcessBetSupervisor(market_id ::  integer) :: {nil | {:error, any()} | {:ok, :undefined | pid()} | {:ok, :undefined | pid(), any()}}
-    defp createProcessBetSupervisor(market_id) do
+    def createProcessBetSupervisor(market_id) do
       child_name = :"supervisor_bet_market_#{market_id}"
       if Process.whereis(child_name) == nil do
         child_spec = Betunfair.Bet.SupervisorMarketBet.child_spec({:args, child_name, market_id})
@@ -74,7 +74,7 @@ defmodule Betunfair.Market do
     end
 
     @spec createProcessMatched(market_id ::  integer) :: {nil | {:error, any()} | {:ok, :undefined | pid()} | {:ok, :undefined | pid(), any()}}
-    defp createProcessMatched(market_id) do
+    def createProcessMatched(market_id) do
       child_name = :"match_#{market_id}"
       if Process.whereis(child_name) == nil do
         Supervisor.start_child(:matched_supervisor, {Betunfair.Matched.OperationsMatched, {:args, child_name, market_id}})
@@ -142,7 +142,7 @@ defmodule Betunfair.Market do
     end
 
     @spec add_child_operation(name :: String.t(), description :: String.t()) :: {{:ok, market_id ::  integer} | {:error, reason :: String.t()}}
-    defp add_child_operation(name, description) do
+    def add_child_operation(name, description) do
       case insert_market(name, description) do
         {:ok, market} ->
           child_name = :"market_#{market.id}" #nombre del hijo
@@ -159,7 +159,7 @@ defmodule Betunfair.Market do
     end
 
     @spec insert_market(name :: String.t(), description :: String.t()) :: {{:ok, market :: Betunfair.Market.t()} | {:error, reason :: String.t()}}
-    defp insert_market(name, description) do
+    def insert_market(name, description) do
       changeset = Betunfair.Market.changeset(%Betunfair.Market{}, %{name: name, description: description, status: "active"})
       case Betunfair.Repo.insert(changeset) do
         {:ok, market} ->
